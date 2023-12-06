@@ -51,6 +51,7 @@ class House:
     def as_dict(self) -> dict:
         """Conversion to dict for friendliness with mongo."""
         values = self.__dict__
+        values["_id"] = self.house_id
         c2: list = []
         for item in self.construction:
             item["material_type"] = item["material_type"].value
@@ -74,7 +75,7 @@ class House:
         for n in item["construction"]:
             n["material_type"] = MaterialType.from_string(n["material_type"])
             c2.append(n)
-        for k, v in item.values():
+        for k, v in item.items():
             setattr(self, k, v)
         self.construction = c2
         return self

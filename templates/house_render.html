@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<!-- Entirely Generated Via ChatGPT (with some explaining and probably bribes) :) -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background-color: #f0f0f0; /* Set background color if needed */
+    }
+
+    .grid-container {
+      display: grid;
+      grid-template-columns: repeat(31, 1fr);
+      gap: 2px; /* Adjust the gap between images as needed */
+      max-width: 100vw; /* Ensure the grid doesn't exceed the viewport width */
+      overflow: auto; /* Enable horizontal scrolling if needed */
+    }
+
+    .grid-item {
+      width: 30px; /* Adjust the width and height of each square */
+      height: 30px;
+      border: 1px solid #ccc; /* Set border color if needed */
+      box-sizing: border-box;
+    }
+
+    .grid-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover; /* Maintain aspect ratio for images */
+    }
+  </style>
+</head>
+<body>
+
+<div class="grid-container"></div>
+
+<script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+<script>
+  $(document).ready(function() {
+    var gridContainer = $(".grid-container");
+
+    // Function to update a specific grid square based on JSON data
+    function updateGridFromJson(jsonResponse) {
+      var construction = jsonResponse.house.construction;
+
+      for (var i = 0; i < 31 * 31; i++) {
+        var x = i % 31;
+        var y = Math.floor(i / 31);
+        var gridItem = $("<div class='grid-item'><img></div>");
+        var imageUrl = getMaterialType(construction, x, y);
+        gridItem.find('img').attr('src', imageUrl);
+        gridContainer.append(gridItem);
+      }
+    }
+
+    // Function to get material type based on coordinates
+    function getMaterialType(construction, x, y) {
+      for (var i = 0; i < construction.length; i++) {
+        var location = construction[i].location;
+        if (location[0] === x && location[1] === y) {
+          return '/img/' + construction[i].material_type.toLowerCase() + '.png';
+        }
+      }
+      // Default image for air
+      return '/img/air.png';
+    }
+
+    // Fetch JSON data from the REST API with house_id parameter from the URL
+    var houseId = window.location.pathname.split('/').pop();
+    $.ajax({
+      url: '/api/house/' + houseId,
+      type: 'GET',
+      dataType: 'json',
+      success: function(response) {
+        // Update the grid based on JSON data from the API
+        updateGridFromJson(response);
+      },
+      error: function(error) {
+        console.error('Error fetching data from the API:', error);
+      }
+    });
+  });
+</script>
+
+</body>
+</html>

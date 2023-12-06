@@ -5,7 +5,7 @@ import uuid
 from flask import Flask
 
 from utils.db_config import db
-from views import assets, api_house
+from views import assets, api_house, api_player, renders
 
 logger = logging.getLogger('System')
 
@@ -28,7 +28,9 @@ app.secret_key = get_secret_key()
 
 registers = [
     assets.mod,
-    api_house.mod
+    renders.mod,
+    api_house.mod,
+    api_player.mod
 ]
 
 for registration in registers:

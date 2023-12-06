@@ -2,7 +2,7 @@ from flask import Blueprint
 
 from api.player_base import Player
 
-mod = Blueprint('api_house', __name__)
+mod = Blueprint('api_player', __name__)
 
 
 @mod.route("/api/player/<player_id>")

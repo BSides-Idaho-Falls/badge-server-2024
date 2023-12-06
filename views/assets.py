@@ -3,8 +3,8 @@ from flask import Blueprint, send_from_directory
 mod = Blueprint('asset', __name__)
 
 
-@mod.route('/assets/<path:path>')
-def assets(path):
+@mod.route('/img/<path:path>')
+def images(path):
     return send_from_directory('static/images/', path)
 
 

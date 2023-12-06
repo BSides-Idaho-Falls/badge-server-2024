@@ -29,4 +29,6 @@ class Player:
         return self
 
     def as_dict(self):
-        return self.__dict__
+        item = self.__dict__
+        item["_id"] = self.player_id
+        return item
