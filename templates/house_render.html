@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-<!-- Entirely Generated Via ChatGPT (with some explaining and probably bribes) :) -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -27,12 +26,21 @@
       height: 30px;
       border: 1px solid #ccc; /* Set border color if needed */
       box-sizing: border-box;
+      position: relative;
     }
 
     .grid-item img {
       width: 100%;
       height: 100%;
       object-fit: cover; /* Maintain aspect ratio for images */
+    }
+
+    .door {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      top: 0;
+      left: -30px;
     }
   </style>
 </head>
@@ -55,6 +63,12 @@
         var gridItem = $("<div class='grid-item'><img></div>");
         var imageUrl = getMaterialType(construction, x, y);
         gridItem.find('img').attr('src', imageUrl);
+
+        // Use "door.png" asset for the tile at 0, 15
+        if (x === 0 && y === 15) {
+          gridItem.find('img').attr('src', '/img/door.png');
+        }
+
         gridContainer.append(gridItem);
       }
     }
