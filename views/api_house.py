@@ -1,4 +1,4 @@
-from flask import Blueprint
+from flask import Blueprint, request
 
 from api.house_base import House
 from api.player_base import Player
@@ -26,6 +26,42 @@ def create_house(player_id):
     player.house_id = new_house.house_id
     player.save()
     return {"success": True, "house_id": new_house.house_id}
+
+
+@mod.route("/api/edit-house/<player_id>/move-vault")
+def move_vault(player_id):
+    api_token = request.headers.get("X-API-Token")
+    player = Player(player_id).load()
+    if player.token != api_token:
+        return {"success": False, "reason": "Unauthorized"}, 401
+    if not player:
+        return {"success": False, "reason": "Player doesn't exist"}
+    house = House(house_id=player.house_id).load()
+    if not house:
+        return {"success": False, "reason": "House not found."}, 404
+    try:
+        data: dict = request.get_json(force=True, silent=True)
+    except ValueError:
+        return {
+            "success": False,
+            "reason": "Malformed Request. Must include json body"
+        }, 400
+
+    if "x" not in data or "y" not in data:
+        return {
+            "success": False,
+            "reason": "Malformed Request. Must include 'x' and 'y' coordinates"
+        }, 400
+
+    if not isinstance(data["x"], int) or not isinstance(data["y"], int):
+        return {
+            "success": False,
+            "reason": "Malformed Request. Must include 'x' and 'y' coordinates"
+        }, 400
+
+    success = house.move_vault(data["x"], data["y"])
+
+    return {"success": success}, 200 if success else 400
 
 
 

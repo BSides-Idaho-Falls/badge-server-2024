@@ -9,9 +9,11 @@ class MaterialType(Enum):
     VAULT = "Vault"
     WOOD_WALL = "Wooden Wall"
     STEEL_WALL = "Steel Wall"
+    CONCRETE_WALL = "Concrete Wall"
 
     @staticmethod
     def from_string(name):
+        name = name.replace("_", " ")
         for member in MaterialType.__members__.values():
             if member.value == name:
                 return member

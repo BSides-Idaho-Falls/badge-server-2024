@@ -20,6 +20,9 @@ def create_player(player_id):
         return {"success": False, "reason": "Can't recreate player"}, 400
     player = Player(player_id)  # .load() would have previously set this object to 'None'
     player.save()
-    return {"success": True, "player_id": player_id}
+    return {"success": True, "player_id": player_id, "token": player.token}
 
 
+
+
+#  077 264 1028

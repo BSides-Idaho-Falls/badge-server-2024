@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import Optional, List, Union
+from typing import Optional, Union
 
 from api.material_base import MaterialType, Material
 from api.materials import Air
@@ -12,11 +12,32 @@ MAX_X = 30
 MAX_Y = 30
 
 
+class VaultContents:
+
+    def __init__(self):
+        self.dollars: int = 2000  # Starting money
+        for item in MaterialType:
+            setattr(self, item.value.replace(" ", "_"), 0)
+        self.Wooden_Wall: int = 20  # Start with 20 walls
+
+    def load(self, json_value):
+        self.dollars = json_value.get("dollars", 2000)  # Starting money if DB value is null
+        for item in MaterialType:
+            count = json_value.get(item.value.replace(" ", "_"), 0)
+            setattr(self, item.value.replace(" ", "_"), count)
+        return self
+
+    def as_dict(self):
+        return self.__dict__
+
+
 class House:
 
     def __init__(self, house_id: Optional[str] = None):
         self.house_id: Optional[str] = house_id
         self.metadata: dict = {}
+
+        self.vault_contents: Optional[VaultContents] = VaultContents()
 
         # List of materials which constructs the api
         # 0,0 -> 30,30: Inclusive of 0 and 30: default AIR
@@ -26,6 +47,20 @@ class House:
                 "location": [30, 15]
             }
         ]
+
+    def move_vault(self, x: int, y: int):
+        material: Optional[Material] = self.get_material_from(x, y)
+        if not material or material.material_type != MaterialType.AIR:
+            return False
+        construction_list: list = []
+        for item in self.construction:
+            if item["material_type"] != MaterialType.VAULT:
+                construction_list.append(item)
+        construction_list.append({
+            "material_type": MaterialType.VAULT,
+            "location": [x, y]
+        })
+        return True
 
     def new(self):
         self.house_id = str(uuid.uuid4())
@@ -57,6 +92,7 @@ class House:
             item["material_type"] = item["material_type"].value
             c2.append(item)
         values["construction"] = c2
+        values["vault_contents"] = self.vault_contents.as_dict()
         return values
 
     def load(self):
@@ -78,6 +114,8 @@ class House:
         for k, v in item.items():
             setattr(self, k, v)
         self.construction = c2
+        vault_contents_dict = item.get("vault_contents", {})
+        self.vault_contents = VaultContents().load(vault_contents_dict)
         return self
 
 

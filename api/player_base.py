@@ -1,3 +1,4 @@
+import uuid
 from typing import Optional
 
 from utils.db_config import db
@@ -8,6 +9,7 @@ class Player:
     def __init__(self, player_id: Optional[str] = None):
         self.player_id: Optional[str] = player_id
         self.house_id: Optional[str] = None
+        self.token: str = str(uuid.uuid4())
 
     def has_house(self):
         return True if self.house_id else False
