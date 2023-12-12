@@ -100,7 +100,6 @@ class House:
     def new(self):
         self.house_id = str(uuid.uuid4())
         self.vault_contents = VaultContents()
-        print(self.vault_contents.as_dict())
         return self
 
     def save(self):

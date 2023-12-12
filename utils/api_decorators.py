@@ -105,7 +105,6 @@ def registration(func):
         _kwarg = any(
             param for param in signature.parameters.values() if param.kind == param.VAR_KEYWORD
         )
-        print(signature)
         if not _signature_contains_value(signature, "player_id"):
             return {"success": False, "reason": "Oopsies, an internal error occurred"}
         player_id = args[0] if len(args) > 0 else kwargs["player_id"]
