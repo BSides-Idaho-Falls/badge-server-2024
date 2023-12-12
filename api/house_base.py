@@ -1,6 +1,6 @@
 import json
 import uuid
-from typing import Optional, Union
+from typing import Optional, Union, List
 
 from api.material_base import MaterialType, Material
 from api.materials import Air
@@ -16,16 +16,41 @@ class VaultContents:
 
     def __init__(self):
         self.dollars: int = 2000  # Starting money
+        self.materials: dict = {}
         for item in MaterialType:
-            setattr(self, item.value.replace(" ", "_"), 0)
-        self.Wooden_Wall: int = 20  # Start with 20 walls
+            self.materials[item.value.replace(" ", "_")] = 0
+        self.materials["Wooden_Wall"] = 20 # Start with 20 walls
 
     def load(self, json_value):
         self.dollars = json_value.get("dollars", 2000)  # Starting money if DB value is null
         for item in MaterialType:
             count = json_value.get(item.value.replace(" ", "_"), 0)
-            setattr(self, item.value.replace(" ", "_"), count)
+            self.materials[item.value.replace(" ", "_")] = count
         return self
+
+    def set_material_count(self, material_type: Union[MaterialType, str], count: int):
+        if isinstance(material_type, MaterialType):
+            material_type = material_type.value
+        self.materials[material_type] = count
+
+    def decrement_material_count(self, material_type: Union[MaterialType, str]):
+        if isinstance(material_type, MaterialType):
+            material_type = material_type.value
+        if material_type not in self.materials:
+            return False
+        if self.materials[material_type] > 0:
+            return False
+        self.set_material_count(material_type, self.materials[material_type] - 1)
+        return True
+
+    def increment_material_count(self, material_type: Union[MaterialType, str]):
+        if isinstance(material_type, MaterialType):
+            material_type = material_type.value
+        if material_type not in self.materials:
+            self.materials[material_type] = 1
+            return True
+        self.set_material_count(material_type, self.materials[material_type] + 1)
+        return True
 
     def as_dict(self):
         return self.__dict__
@@ -48,11 +73,15 @@ class House:
             }
         ]
 
-    def move_vault(self, x: int, y: int):
+    @staticmethod
+    def _in_bounds(x: int, y: int):
+        return not (x < MIX_X or x > MAX_X or MIN_Y < 0 or y > MAX_Y)
+
+    def move_vault(self, x: int, y: int) -> bool:
         material: Optional[Material] = self.get_material_from(x, y)
         if not material or material.material_type != MaterialType.AIR:
             return False
-        construction_list: list = []
+        construction_list: List[dict] = []
         for item in self.construction:
             if item["material_type"] != MaterialType.VAULT:
                 construction_list.append(item)
@@ -75,7 +104,7 @@ class House:
         return self
 
     def get_material_from(self, x: int, y: int) -> Optional[Material]:
-        if x < MIX_X or x > MAX_X or MIN_Y < 0 or y > MAX_Y:  # Out of bounds
+        if not House._in_bounds(x, y):
             return None
         for item in self.construction:
             location = item["location"]
@@ -83,9 +112,37 @@ class House:
                 return item
         return Air()  # Default material in a api
 
+    def remove_item(self, x: int, y: int):
+        new_construction: List[dict] = []
+        removed: Optional[dict] = None
+        for item in self.construction:
+            location = item["location"]
+            if x == location[0] and y == location[1]:
+                removed = item
+                continue
+            new_construction.append(item)
+        self.construction = new_construction
+        return removed
+
+    def set_item(self, material_type: Union[MaterialType, str], x: int, y: int):
+        current_item: Material = self.get_material_from(x, y)
+        if not House._in_bounds(x, y):
+            return False, None
+        if isinstance(material_type, str):
+            material_type = MaterialType.from_string(material_type)
+        if current_item.material_type == MaterialType.VAULT:
+            return False, None
+        removed: Optional[dict] = self.remove_item(x, y)
+        if material_type != MaterialType.AIR:
+            self.construction.append({
+                "material_type": material_type,
+                "location": [x, y]
+            })
+        return True, removed
+
     def as_dict(self) -> dict:
         """Conversion to dict for friendliness with mongo."""
-        values = self.__dict__
+        values: dict = self.__dict__
         values["_id"] = self.house_id
         c2: list = []
         for item in self.construction:
@@ -98,7 +155,7 @@ class House:
     def load(self):
         if not self.house_id:
             return None
-        house = db["houses"].find_one({"_id": self.house_id})
+        house: dict = db["houses"].find_one({"_id": self.house_id})
         if not house:
             return None
         return self.from_json(house)
