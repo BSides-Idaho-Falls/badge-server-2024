@@ -13,6 +13,13 @@ class MaterialType(Enum):
 
     @staticmethod
     def from_string(name):
+        if not name:
+            return None
+
+        # If for some reason MaterialType is trying to be reconverted
+        if isinstance(name, MaterialType):
+            return name
+
         name = name.replace("_", " ")
         for member in MaterialType.__members__.values():
             if member.value == name:

@@ -4,8 +4,9 @@ from flask import Blueprint, request
 
 from api.house_base import House, VaultContents
 from api.material_base import Material, MaterialType
+from api.materials import Air
 from api.player_base import Player
-from utils.api_decorators import has_house, player_valid
+from utils.api_decorators import has_house, player_valid, json_data
 
 mod = Blueprint('api_house', __name__)
 
@@ -69,24 +70,9 @@ def move_vault(player_id):
 
 
 @mod.route("/api/edit-house/<player_id>/build", methods=["POST"])
+@json_data
 @has_house
-def build_square(player_id):
-    api_token: str = request.headers.get("X-API-Token")
-    player: Player = Player(player_id).load()
-    if player.token != api_token:
-        return {"success": False, "reason": "Unauthorized"}, 401
-    if not player:
-        return {"success": False, "reason": "Player doesn't exist"}
-    house: House = House(house_id=player.house_id).load()
-    if not house:
-        return {"success": False, "reason": "House not found."}, 404
-    try:
-        data: dict = request.get_json(force=True, silent=True)
-    except ValueError:
-        return {
-            "success": False,
-            "reason": "Malformed Request. Must include json body"
-        }, 400
+def build_square(player_id, player, data):
 
     if "x" not in data or "y" not in data:
         return {
@@ -100,7 +86,13 @@ def build_square(player_id):
             "reason": "Malformed Request. Must include 'x' and 'y' coordinates"
         }, 400
 
-    material: Material = house.get_material_from(x, y)
+    house: House = House(house_id=player.house_id).load()
+
+    if not House.in_bounds(x, y):
+        return {"success": False, "reason": "Can't edit out of bounds"}
+
+    material: Material = house.get_material_from(x, y) or Air()
+
     if material.material_type == MaterialType.VAULT:
         return {
             "success": False, "reason": "Cannot build over the vault. Please move the vault first."
@@ -113,24 +105,9 @@ def build_square(player_id):
 
 
 @mod.route("/api/edit-house/<player_id>/clear", methods=["DELETE"])
+@json_data
 @has_house
-def clear_square(player_id):
-    api_token: str = request.headers.get("X-API-Token")
-    player: Player = Player(player_id).load()
-    if player.token != api_token:
-        return {"success": False, "reason": "Unauthorized"}, 401
-    if not player:
-        return {"success": False, "reason": "Player doesn't exist"}
-    house: House = House(house_id=player.house_id).load()
-    if not house:
-        return {"success": False, "reason": "House not found."}, 404
-    try:
-        data: dict = request.get_json(force=True, silent=True)
-    except ValueError:
-        return {
-            "success": False,
-            "reason": "Malformed Request. Must include json body"
-        }, 400
+def clear_square(player_id, player, data):
 
     if "x" not in data or "y" not in data:
         return {
@@ -143,6 +120,9 @@ def clear_square(player_id):
             "success": False,
             "reason": "Malformed Request. Must include 'x' and 'y' coordinates"
         }, 400
+
+    house: House = House(house_id=player.house_id).load()
+
     if "material_type" in data:
         return {"success": False, "reason": "Can't supply material_type in removal."}, 400
     return house_editor(house, data)
@@ -152,16 +132,17 @@ def house_editor(house: House, data: dict) -> Tuple[dict, int]:
     vault_contents: VaultContents = house.vault_contents
 
     material_type: MaterialType = MaterialType.from_string(
-        data.get("material_type", MaterialType.AIR.value)
+        data.get("material_type")
     )
 
-    if not vault_contents.decrement_material_count(material_type):
+    if material_type and not vault_contents.decrement_material_count(material_type):
         return {"success": False, "reason": f"You don't have enough {material_type.value}"}, 200
+
+    if not material_type:
+        material_type = MaterialType.AIR
 
     success, removed = house.set_item(material_type, data["x"], data["y"])
     if success and removed:
         vault_contents.increment_material_count(removed["material_type"])
-        house.save()
-        return {"success": True}, 200
-
+    house.save()
     return {"success": success}, 200

@@ -55,13 +55,13 @@
 
     // Function to update a specific grid square based on JSON data
     function updateGridFromJson(jsonResponse) {
-      var construction = jsonResponse.house.construction;
+      var construction = jsonResponse.construction;
 
       for (var i = 0; i < 31 * 31; i++) {
         var x = i % 31;
         var y = Math.floor(i / 31);
         var gridItem = $("<div class='grid-item'><img></div>");
-        var imageUrl = getMaterialType(construction, x, y);
+        var imageUrl = getMaterialType(construction, x, y).replace(" ", "_");
         gridItem.find('img').attr('src', imageUrl);
 
         // Use "door.png" asset for the tile at 0, 15
@@ -87,18 +87,12 @@
 
     // Fetch JSON data from the REST API with house_id parameter from the URL
     var houseId = window.location.pathname.split('/').pop();
-    $.ajax({
-      url: '/api/house/' + houseId,
-      type: 'GET',
-      dataType: 'json',
-      success: function(response) {
-        // Update the grid based on JSON data from the API
-        updateGridFromJson(response);
-      },
-      error: function(error) {
-        console.error('Error fetching data from the API:', error);
-      }
-    });
+
+    house_data = {{ house_data|safe }}
+    updateGridFromJson(house_data)
+
+
+
   });
 </script>
 

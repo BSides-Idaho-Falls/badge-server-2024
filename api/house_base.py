@@ -29,7 +29,7 @@ class VaultContents:
             if item in [MaterialType.VAULT, MaterialType.AIR]:
                 continue
             item_name: str = item.value.replace(" ", "_")
-            count = json_value.get(item_name, 20 if item_name == "Wooden_Wall" else 0)
+            count = json_value.get("materials", {}).get(item_name, 20 if item_name == "Wooden_Wall" else 0)
             self.materials[item.value.replace(" ", "_")] = count
         return self
 
@@ -41,9 +41,10 @@ class VaultContents:
     def decrement_material_count(self, material_type: Union[MaterialType, str]):
         if isinstance(material_type, MaterialType):
             material_type = material_type.value
+        material_type = material_type.replace(" ", "_")
         if material_type not in self.materials:
             return False
-        if self.materials[material_type] > 0:
+        if self.materials[material_type] <= 0:
             return False
         self.set_material_count(material_type, self.materials[material_type] - 1)
         return True
@@ -51,6 +52,7 @@ class VaultContents:
     def increment_material_count(self, material_type: Union[MaterialType, str]):
         if isinstance(material_type, MaterialType):
             material_type = material_type.value
+        material_type = material_type.replace(" ", "_")
         if material_type not in self.materials:
             self.materials[material_type] = 1
             return True
@@ -80,10 +82,17 @@ class House:
         ]
 
     @staticmethod
-    def _in_bounds(x: int, y: int):
-        return not (x < MIX_X or x > MAX_X or MIN_Y < 0 or y > MAX_Y)
+    def in_bounds(x: int, y: int):
+        in_square: bool = not (x < MIX_X or x > MAX_X or MIN_Y < 0 or y > MAX_Y)
+        if not in_square:
+            return False
+        if x == 0 and y == 15:
+            return False  # Can't overwrite the player entry point
+        return True
 
     def move_vault(self, x: int, y: int) -> bool:
+        if not House.in_bounds(x, y):
+            return False
         material: Optional[Material] = self.get_material_from(x, y)
         if not material or material.material_type != MaterialType.AIR:
             return False
@@ -111,12 +120,12 @@ class House:
         return self
 
     def get_material_from(self, x: int, y: int) -> Optional[Material]:
-        if not House._in_bounds(x, y):
+        if not House.in_bounds(x, y):
             return None
         for item in self.construction:
             location = item["location"]
             if x == location[0] and y == location[1]:
-                return item
+                return Material().from_json(item)
         return Air()  # Default material in a api
 
     def remove_item(self, x: int, y: int):
@@ -133,7 +142,7 @@ class House:
 
     def set_item(self, material_type: Union[MaterialType, str], x: int, y: int):
         current_item: Material = self.get_material_from(x, y)
-        if not House._in_bounds(x, y):
+        if not House.in_bounds(x, y):
             return False, None
         if isinstance(material_type, str):
             material_type = MaterialType.from_string(material_type)
