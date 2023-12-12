@@ -18,13 +18,18 @@ class VaultContents:
         self.dollars: int = 2000  # Starting money
         self.materials: dict = {}
         for item in MaterialType:
+            if item in [MaterialType.VAULT, MaterialType.AIR]:
+                continue
             self.materials[item.value.replace(" ", "_")] = 0
-        self.materials["Wooden_Wall"] = 20 # Start with 20 walls
+        self.materials["Wooden_Wall"] = 20  # Start with 20 walls
 
     def load(self, json_value):
         self.dollars = json_value.get("dollars", 2000)  # Starting money if DB value is null
         for item in MaterialType:
-            count = json_value.get(item.value.replace(" ", "_"), 0)
+            if item in [MaterialType.VAULT, MaterialType.AIR]:
+                continue
+            item_name: str = item.value.replace(" ", "_")
+            count = json_value.get(item_name, 20 if item_name == "Wooden_Wall" else 0)
             self.materials[item.value.replace(" ", "_")] = count
         return self
 
@@ -53,7 +58,8 @@ class VaultContents:
         return True
 
     def as_dict(self):
-        return self.__dict__
+        contents: dict = self.__dict__
+        return contents
 
 
 class House:
@@ -93,6 +99,8 @@ class House:
 
     def new(self):
         self.house_id = str(uuid.uuid4())
+        self.vault_contents = VaultContents()
+        print(self.vault_contents.as_dict())
         return self
 
     def save(self):

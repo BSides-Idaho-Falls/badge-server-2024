@@ -5,23 +5,23 @@ from flask import Blueprint, request
 from api.house_base import House, VaultContents
 from api.material_base import Material, MaterialType
 from api.player_base import Player
-from utils.api_decorators import validator
+from utils.api_decorators import has_house, player_valid
 
 mod = Blueprint('api_house', __name__)
 
 
 @mod.route('/api/house/<player_id>', methods=["GET"])
-@validator
+@has_house
 def get_house(player_id, player):
     house: House = House(house_id=player.house_id).load()
-    return {"success": True, "house": house.as_dict()}
+    house_dict = house.as_dict()
+    del house_dict["_id"]
+    return {"success": True, "house": house_dict}
 
 
 @mod.route("/api/house/<player_id>", methods=["POST"])
-def create_house(player_id):
-    player = Player(player_id=player_id).load()
-    if not player:
-        return {"success": False, "reason": "Player not found"}, 404
+@player_valid
+def create_house(player_id, player):
     if player.has_house():
         return {"success": False, "reason": "This player already has a house!"}, 400
     new_house = House().new()
@@ -32,6 +32,7 @@ def create_house(player_id):
 
 
 @mod.route("/api/edit-house/<player_id>/move-vault", methods=["POST"])
+@has_house
 def move_vault(player_id):
     api_token: str = request.headers.get("X-API-Token")
     player: Player = Player(player_id).load()
@@ -68,6 +69,7 @@ def move_vault(player_id):
 
 
 @mod.route("/api/edit-house/<player_id>/build", methods=["POST"])
+@has_house
 def build_square(player_id):
     api_token: str = request.headers.get("X-API-Token")
     player: Player = Player(player_id).load()
@@ -111,6 +113,7 @@ def build_square(player_id):
 
 
 @mod.route("/api/edit-house/<player_id>/clear", methods=["DELETE"])
+@has_house
 def clear_square(player_id):
     api_token: str = request.headers.get("X-API-Token")
     player: Player = Player(player_id).load()
