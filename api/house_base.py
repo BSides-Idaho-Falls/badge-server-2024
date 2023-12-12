@@ -35,10 +35,12 @@ class VaultContents:
 
     def set_material_count(self, material_type: Union[MaterialType, str], count: int):
         if isinstance(material_type, MaterialType):
-            material_type = material_type.value
+            material_type = material_type.value.replace(" ", "_")
         self.materials[material_type] = count
 
-    def decrement_material_count(self, material_type: Union[MaterialType, str]):
+    def decrement_material_count(self, material_type: Union[MaterialType, str], decrement_by: Optional[int] = None):
+        if not decrement_by:
+            decrement_by = 1
         if isinstance(material_type, MaterialType):
             material_type = material_type.value
         material_type = material_type.replace(" ", "_")
@@ -46,17 +48,22 @@ class VaultContents:
             return False
         if self.materials[material_type] <= 0:
             return False
-        self.set_material_count(material_type, self.materials[material_type] - 1)
+        count = self.materials[material_type] - decrement_by
+        if count < 0:
+            count = 0
+        self.set_material_count(material_type, count)
         return True
 
-    def increment_material_count(self, material_type: Union[MaterialType, str]):
+    def increment_material_count(self, material_type: Union[MaterialType, str], increment_by: Optional[int] = None):
+        if not increment_by:
+            increment_by = 1
         if isinstance(material_type, MaterialType):
             material_type = material_type.value
         material_type = material_type.replace(" ", "_")
         if material_type not in self.materials:
-            self.materials[material_type] = 1
+            self.materials[material_type] = increment_by
             return True
-        self.set_material_count(material_type, self.materials[material_type] + 1)
+        self.set_material_count(material_type, self.materials[material_type] + increment_by)
         return True
 
     def as_dict(self):

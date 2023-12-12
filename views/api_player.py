@@ -17,8 +17,3 @@ def get_player(player_id, player):
 def create_player(player_id, player):
     player.save()
     return {"success": True, "player_id": player_id, "token": player.token}
-
-
-
-
-#  077 264 1028

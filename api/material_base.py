@@ -34,6 +34,11 @@ class Material:
         self.name: Optional[str] = None  # Default Material
         self.passable: bool = True  # Can player pass through?
 
+        self.purchasable: bool = False
+        self.sellable: bool = False
+        self.sell_price: int = 0
+        self.buy_price: int = 0
+
     def as_dict(self) -> dict:
         values = self.__dict__
         for k, v in values.items():

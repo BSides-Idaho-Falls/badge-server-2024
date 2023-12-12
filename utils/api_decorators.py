@@ -20,6 +20,15 @@ def _signature_contains_value(signature, value):
 
 
 def has_house(func):
+    """
+    Validate the following parameters:
+
+    * Player with player_id exists
+    * API Token exists and is valid for the specified player
+    * Player has a house
+
+    Returns Player Object to be used in flask methods.
+    """
 
     def validate_incoming_data(player_id):
         api_token: str = request.headers.get("X-API-Token")
@@ -59,7 +68,14 @@ def has_house(func):
 
 
 def player_valid(func):
+    """
+        Validate the following parameters:
 
+        * Player with player_id exists
+        * API Token exists and is valid for the specified player
+
+        Returns Player Object to be used in flask methods.
+        """
     def validate_incoming_data(player_id):
         api_token: str = request.headers.get("X-API-Token")
         player: Player = Player(player_id).load()
@@ -95,6 +111,14 @@ def player_valid(func):
 
 
 def registration(func):
+    """
+        Validate the following parameters:
+
+        * Player with player_id does **NOT** exist
+        * API Registration Token exists and stored in registration DB
+
+        Returns **NEW** Player Object to be used in flask methods.
+        """
 
     def validate_incoming_data(player_id):
         registration_token: str = request.headers.get("X-Register-Token")
@@ -134,6 +158,13 @@ def registration(func):
 
 
 def json_data(func):
+    """
+        Validate the following parameters:
+
+        * Request contains JSON body
+
+        Returns the incoming JSON body as data
+        """
 
     def validate_incoming_data():
         try:

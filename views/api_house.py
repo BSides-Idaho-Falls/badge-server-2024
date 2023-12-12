@@ -7,6 +7,7 @@ from api.material_base import Material, MaterialType
 from api.materials import Air
 from api.player_base import Player
 from utils.api_decorators import has_house, player_valid, json_data
+from utils.validation import dict_types_valid
 
 mod = Blueprint('api_house', __name__)
 
@@ -74,17 +75,29 @@ def move_vault(player_id):
 @has_house
 def build_square(player_id, player, data):
 
-    if "x" not in data or "y" not in data:
+    if "x" not in data or "y" not in data:  # Included for custom error message
         return {
             "success": False,
             "reason": "Malformed Request. Must include 'x' and 'y' coordinates"
         }, 400
+
+    if not dict_types_valid(data, {
+        "x": {
+            "type": int,
+            "required": True
+        },
+        "y": {
+            "type": int,
+            "required": True
+        },
+        "material_type": {
+            "type": str,
+            "required": True
+        }
+    }):
+        return {"success": False, "reason": "malformed data"}, 400
+
     x, y = data["x"], data["y"]
-    if not isinstance(x, int) or not isinstance(y, int):
-        return {
-            "success": False,
-            "reason": "Malformed Request. Must include 'x' and 'y' coordinates"
-        }, 400
 
     house: House = House(house_id=player.house_id).load()
 
@@ -97,9 +110,6 @@ def build_square(player_id, player, data):
         return {
             "success": False, "reason": "Cannot build over the vault. Please move the vault first."
         }
-
-    if "material_type" not in data:
-        return {"success": False, "reason": "No materials given."}
 
     return house_editor(house, data)
 
@@ -114,17 +124,24 @@ def clear_square(player_id, player, data):
             "success": False,
             "reason": "Malformed Request. Must include 'x' and 'y' coordinates"
         }, 400
-    x, y = data["x"], data["y"]
-    if not isinstance(x, int) or not isinstance(y, int):
-        return {
-            "success": False,
-            "reason": "Malformed Request. Must include 'x' and 'y' coordinates"
-        }, 400
+
+    if not dict_types_valid(data, {
+        "x": {
+            "type": int,
+            "required": True
+        },
+        "y": {
+            "type": int,
+            "required": True
+        },
+        "material_type": {
+            "excluded": True
+        }
+    }):
+        return {"success": False, "reason": "Malformed Data"}, 400
 
     house: House = House(house_id=player.house_id).load()
 
-    if "material_type" in data:
-        return {"success": False, "reason": "Can't supply material_type in removal."}, 400
     return house_editor(house, data)
 
 
@@ -136,6 +153,8 @@ def house_editor(house: House, data: dict) -> Tuple[dict, int]:
     )
 
     if material_type and not vault_contents.decrement_material_count(material_type):
+        if material_type == MaterialType.AIR:
+            return {"success": False, "reason": "Invalid Material"}, 200
         return {"success": False, "reason": f"You don't have enough {material_type.value}"}, 200
 
     if not material_type:
