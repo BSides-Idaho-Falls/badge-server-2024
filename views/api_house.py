@@ -33,6 +33,25 @@ def create_house(player_id, player):
     return {"success": True, "house_id": new_house.house_id}
 
 
+@mod.route("/api/house/<player_id>/abandon", methods=["DELETE"])
+@has_house
+def abandon_house(player_id, player):
+    house = House(house_id=player.house_id).load()
+    house.abandoned = True
+    house.abandoned_by = player.player_id
+
+    player.house_id = None
+
+    player.save()
+    house.save()
+
+    return {
+        "success": True,
+        "message": "Your house has been abandoned and you lost all "
+                   "belongings and money. You may create a new house now and start over."
+    }
+
+
 @mod.route("/api/edit-house/<player_id>/move-vault", methods=["POST"])
 @has_house
 def move_vault(player_id):
@@ -74,7 +93,6 @@ def move_vault(player_id):
 @json_data
 @has_house
 def build_square(player_id, player, data):
-
     if "x" not in data or "y" not in data:  # Included for custom error message
         return {
             "success": False,
@@ -118,7 +136,6 @@ def build_square(player_id, player, data):
 @json_data
 @has_house
 def clear_square(player_id, player, data):
-
     if "x" not in data or "y" not in data:
         return {
             "success": False,

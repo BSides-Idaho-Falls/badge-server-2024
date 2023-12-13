@@ -76,6 +76,8 @@ class House:
     def __init__(self, house_id: Optional[str] = None):
         self.house_id: Optional[str] = house_id
         self.metadata: dict = {}
+        self.abandoned: bool = False
+        self.abandoned_by: Optional[str] = None
 
         self.vault_contents: Optional[VaultContents] = VaultContents()
 
