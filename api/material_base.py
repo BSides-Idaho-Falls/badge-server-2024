@@ -7,6 +7,7 @@ class MaterialType(Enum):
 
     AIR = "Air"
     VAULT = "Vault"
+    HOUSE_WALL = "House Wall"
     WOOD_WALL = "Wooden Wall"
     STEEL_WALL = "Steel Wall"
     CONCRETE_WALL = "Concrete Wall"

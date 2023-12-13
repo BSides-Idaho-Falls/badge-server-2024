@@ -44,6 +44,16 @@ class Vault(Material):
         self.passable = False
 
 
+class HouseWall(Wall):
+
+    def __init__(self):
+        super().__init__()
+        self.material_type = MaterialType.HOUSE_WALL
+        self.name = "House Wall"
+        self.toughness = 100
+        self.conductive = False
+
+
 class SteelWall(Wall):
 
     def __init__(self):
