@@ -117,6 +117,25 @@ class House:
 
     def new(self):
         self.house_id = str(uuid.uuid4())
+        self.construction: list = [
+            {
+                "material_type": MaterialType.VAULT,
+                "location": [30, 15]
+            }
+        ]
+        for x in range(2, 7):
+            self.construction.append(
+                {
+                    "material_type": MaterialType.WOOD_WALL,
+                    "location": [x, 14]
+                }
+            )
+            self.construction.append(
+                {
+                    "material_type": MaterialType.WOOD_WALL,
+                    "location": [x, 16]
+                }
+            )
         self.vault_contents = VaultContents()
         return self
 
