@@ -74,7 +74,7 @@ class HouseAccess:
                     "material_type": material.material_type.value.replace(" ", "_"),
                     "local_location": [local_x, local_y],
                     "absolute_location": [x, y],
-                    "passable": material.passable
+                    "passable": material.material_type.value == "Air"  # TODO figure out passable
                 })
                 local_y += 1
             local_x += 1
