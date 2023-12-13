@@ -52,6 +52,7 @@ class HouseWall(Wall):
         self.name = "House Wall"
         self.toughness = 100
         self.conductive = False
+        self.passable = False
 
 
 class SteelWall(Wall):
@@ -62,6 +63,7 @@ class SteelWall(Wall):
         self.name = "Steel Wall"
         self.toughness = 5
         self.conductive = True
+        self.passable = False
 
         self.purchasable = True
         self.sellable = True
@@ -77,6 +79,7 @@ class ConcreteWall(Wall):
         self.name = "Concrete Wall"
         self.toughness = 5
         self.conductive = False
+        self.passable = False
 
         self.purchasable = True
         self.sellable = True
@@ -91,6 +94,7 @@ class WoodWall(Wall):
         self.material_type = MaterialType.WOOD_WALL
         self.name = "Wood Wall"
         self.toughness = 1
+        self.passable = False
 
         self.purchasable = True
         self.sellable = True

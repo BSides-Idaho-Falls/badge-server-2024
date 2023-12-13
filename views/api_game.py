@@ -8,6 +8,27 @@ from utils.api_decorators import has_house
 mod = Blueprint('api_game', __name__)
 
 
+@mod.route("/api/game/<player_id>/move/<direction>", methods=["POST"])
+@has_house
+def move_player(player_id, direction, player):
+    house_id: Optional[str] = HouseAccess.find_occupying_house(player_id)
+    if not house_id:
+        return {"success": False, "reason": "You are not in a house."}, 400
+    access: HouseAccess = HouseAccess(
+        player_id=player_id,
+        house_id=house_id
+    ).load()
+    if not access:
+        return {"success": False, "reason": "House does not exist!"}, 404
+    if direction.lower() not in ["left", "right", "up", "down"]:
+        return {"success": False, "reason": "Illegal direction"}, 400
+    item = access.move(direction)
+    if not item:
+        return {"success": False, "reason": "Unable to move in that direction"}
+    item["success"] = True
+    return item
+
+
 @mod.route("/api/game/<player_id>/enter_house", methods=["POST"])
 @has_house
 def enter_house(player_id, player):

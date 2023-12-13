@@ -3,6 +3,7 @@ from typing import Optional, List
 
 from api.house_base import House
 from api.material_base import Material
+from api.materials import Air
 from utils.db_config import db
 
 
@@ -16,6 +17,11 @@ class HouseAccess:
 
     def load(self):
         self.house: House = House(house_id=self.house_id).load()
+        db_access = db["access"].find_one({
+            "player_id": self.player_id
+        })
+        if db_access:
+            self.player_location = db_access["player_location"]
         return self if self.house else None
 
     def is_in_house(self):
@@ -74,6 +80,18 @@ class HouseAccess:
             local_x += 1
         return {"construction": construction}
 
+    def move(self, direction):
+        direction = direction.lower()
+        if direction not in ["left", "right", "up", "down"]:
+            return False
+        if direction == "left":
+            return self.move_left()
+        if direction == "right":
+            return self.move_right()
+        if direction == "up":
+            return self.move_up()
+        return self.move_down()  # Should always be down because of string whitelist.
+
     def move_up(self):
         return self._teleport_to(self.player_location[0], self.player_location[1] + 1)
 
@@ -81,19 +99,24 @@ class HouseAccess:
         return self._teleport_to(self.player_location[0], self.player_location[1] - 1)
 
     def move_left(self):
-        return self._teleport_to(self.player_location[0] + 1, self.player_location[1])
+        return self._teleport_to(self.player_location[0] - 1, self.player_location[1])
 
     def move_right(self):
-        return self._teleport_to(self.player_location[0] - 1, self.player_location[1])
+        return self._teleport_to(self.player_location[0] + 1, self.player_location[1])
 
     def _teleport_to(self, x: int, y: int):
         if not self.is_in_house():
             return None
         material: Optional[Material] = self.house.get_material_from(x, y)
         if not material:
-            return None
+            if not (x == 0 and y == 15):  # Door location
+                return None
+            material = Air()
         if not material.passable:
             return None
+        if material.material_type.value != "Air":
+            return None  # material.passable is bugged, figure out why?
+        print(f"{self.player_id} is moving to {x},{y} in house {self.house_id}")
         self.player_location = [x, y]
         db["access"].update_one(
             {"player_id": self.player_id},
