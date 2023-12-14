@@ -5,7 +5,7 @@ import uuid
 from flask import Flask
 
 from utils.db_config import db
-from views import assets, api_house, api_player, renders
+from views import assets, api_house, api_player, renders, fun_tools, api_shop, api_game
 
 logger = logging.getLogger('System')
 
@@ -30,7 +30,10 @@ registers = [
     assets.mod,
     renders.mod,
     api_house.mod,
-    api_player.mod
+    api_player.mod,
+    api_shop.mod,
+    api_game.mod,
+    fun_tools.mod
 ]
 
 for registration in registers:

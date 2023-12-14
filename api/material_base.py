@@ -7,11 +7,21 @@ class MaterialType(Enum):
 
     AIR = "Air"
     VAULT = "Vault"
+    HOUSE_WALL = "House Wall"
     WOOD_WALL = "Wooden Wall"
     STEEL_WALL = "Steel Wall"
+    CONCRETE_WALL = "Concrete Wall"
 
     @staticmethod
     def from_string(name):
+        if not name:
+            return None
+
+        # If for some reason MaterialType is trying to be reconverted
+        if isinstance(name, MaterialType):
+            return name
+
+        name = name.replace("_", " ")
         for member in MaterialType.__members__.values():
             if member.value == name:
                 return member
@@ -24,6 +34,11 @@ class Material:
         self.material_type: Optional[MaterialType] = None
         self.name: Optional[str] = None  # Default Material
         self.passable: bool = True  # Can player pass through?
+
+        self.purchasable: bool = False
+        self.sellable: bool = False
+        self.sell_price: int = 0
+        self.buy_price: int = 0
 
     def as_dict(self) -> dict:
         values = self.__dict__

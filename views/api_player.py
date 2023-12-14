@@ -1,25 +1,19 @@
 from flask import Blueprint
 
 from api.player_base import Player
+from utils.api_decorators import player_valid, registration
 
 mod = Blueprint('api_player', __name__)
 
 
 @mod.route("/api/player/<player_id>")
-def get_player(player_id):
-    player = Player(player_id).load()
-    if not player:
-        return {"success": False, "reason": "Player not found"}, 404
+@player_valid
+def get_player(player_id, player):
     return player.as_dict()
 
 
 @mod.route("/api/player/<player_id>", methods=["POST"])
-def create_player(player_id):
-    player = Player(player_id).load()
-    if player:
-        return {"success": False, "reason": "Can't recreate player"}, 400
-    player = Player(player_id)  # .load() would have previously set this object to 'None'
+@registration  # You can create as many players as you want, but we can keep track of who does it :)
+def create_player(player_id, player):
     player.save()
-    return {"success": True, "player_id": player_id}
-
-
+    return {"success": True, "player_id": player_id, "token": player.token}
