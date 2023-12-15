@@ -2,7 +2,7 @@ version: '2.1'
 services:
   mongo:
     image: mongo:latest
-    container_name: mongo
+    container_name: mongo_pycharm
     restart: unless-stopped
     volumes:
       - ../db_data:/data/db
