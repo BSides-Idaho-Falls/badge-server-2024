@@ -1,0 +1,18 @@
+version: '2.1'
+services:
+  mongo:
+    image: mongo:latest
+    container_name: mongo
+    restart: unless-stopped
+    volumes:
+      - ../db_data:/data/db
+    logging:
+      driver: none
+    ports:
+      - 27017:27017
+    networks:
+      - badger
+networks:
+  badger:
+    name: badger
+    external: true

@@ -1,0 +1,22 @@
+version: '3.7'
+services:
+    web:
+      image: meecles/badge-api-2023
+      build: .
+      container_name: badge-api-2023
+      restart: unless-stopped
+      volumes:
+        - ./templates:/root/templates
+        - ./static:/root/static
+      environment:
+        - MONGO_IP=mongo.badger
+      env_file:
+        - settings.env
+      ports:
+        - 8080:8080
+      networks:
+        - badger
+networks:
+  badger:
+    name: badger
+    external: true
