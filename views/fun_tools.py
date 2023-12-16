@@ -51,6 +51,7 @@ def enable_registration():
         })
         return {"success": True}
     config_item["enabled"] = True
+    db["config"].find_one_and_replace({"_id": "self-registration"}, config_item)
     return {"success": True}
 
 
@@ -68,6 +69,7 @@ def disable_registration():
         })
         return {"success": True}
     config_item["enabled"] = False
+    db["config"].find_one_and_replace({"_id": "self-registration"}, config_item)
     return {"success": True}
 
 
@@ -75,7 +77,7 @@ def disable_registration():
 @json_data
 def self_registration(data):
     config_item = db["config"].find_one({"_id": "self-registration"})
-    if not config_item or not config_item.get("enabled"):
+    if not config_item or not config_item.get("enabled", False):
         return {"success": False, "reason": "self registration disabled."}, 400
     if not dict_types_valid(data, {
         "_id": {
