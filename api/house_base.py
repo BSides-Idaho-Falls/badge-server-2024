@@ -92,7 +92,7 @@ class House:
 
     @staticmethod
     def in_bounds(x: int, y: int):
-        in_square: bool = not (x < MIX_X or x > MAX_X or MIN_Y < 0 or y > MAX_Y)
+        in_square: bool = not (x < MIX_X or x > MAX_X or y < MIN_Y or y > MAX_Y)
         if not in_square:
             return False
         if x == 0 and y == 15:
