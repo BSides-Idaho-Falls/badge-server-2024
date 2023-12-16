@@ -86,7 +86,7 @@ def sell_item(player_id, player, data):
         return {"success": False, "reason": "Malformed Data"}, 400
 
     requested_material: MaterialType = MaterialType.from_string(data.get("material"))
-    if not requested_material or requested_material in [MaterialType.AIR, MaterialType.VAULT]:
+    if not requested_material or requested_material in [MaterialType.HOUSE_WALL, MaterialType.AIR, MaterialType.VAULT]:
         return {"success": False, "reason": "You can't sell this!"}
 
     material: Material = material_from_type(requested_material)
