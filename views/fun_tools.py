@@ -8,7 +8,7 @@ from utils.db_config import db
 mod = Blueprint('api_fun_tools', __name__)
 
 
-@mod.route("/reset-game", methods=["DELETE"])
+@mod.route("/api/reset-game", methods=["DELETE"])
 def reset_game():
     reset_token = request.headers.get("X-API-Token", "")
     valid_token = os.environ.get("ADMINISTRATION_KEY", "default_token_hack_me_boi")
@@ -19,7 +19,7 @@ def reset_game():
     return {"success": True}
 
 
-@mod.route("/clear-registration", methods=["DELETE"])
+@mod.route("/api/clear-registration", methods=["DELETE"])
 def reset_registration():
     reset_token = request.headers.get("X-API-Token", "")
     valid_token = os.environ.get("ADMINISTRATION_KEY", "default_token_hack_me_boi")
