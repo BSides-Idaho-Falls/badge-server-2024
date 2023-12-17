@@ -36,7 +36,7 @@ class HouseAccess:
         })
         return False if db_access else True  # Can't enter while someone else is there
 
-    def render_surroundings(self, player_location: Optional[List[int]] = None, compressed_view: bool = True) -> dict:
+    def render_surroundings(self, player_location: Optional[List[int]] = None, compressed_view: bool = False) -> dict:
         absolute_player_location: Optional[List[int]] = player_location or self.player_location
         if not absolute_player_location:
             return {}
