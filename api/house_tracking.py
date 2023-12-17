@@ -121,7 +121,7 @@ class HouseAccess:
     def move_right(self):
         return self._teleport_to(self.player_location[0] + 1, self.player_location[1])
 
-    def _teleport_to(self, x: int, y: int, compressed_view=True):
+    def _teleport_to(self, x: int, y: int, compressed_view=False):
         if not self.is_in_house():
             return None
         material: Optional[Material] = self.house.get_material_from(x, y)
