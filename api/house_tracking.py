@@ -36,7 +36,7 @@ class HouseAccess:
         })
         return False if db_access else True  # Can't enter while someone else is there
 
-    def render_surroundings(self, player_location: Optional[List[int]] = None) -> dict:
+    def render_surroundings(self, player_location: Optional[List[int]] = None, compressed_view: bool = True) -> dict:
         absolute_player_location: Optional[List[int]] = player_location or self.player_location
         if not absolute_player_location:
             return {}
@@ -82,7 +82,20 @@ class HouseAccess:
                     })
                 local_y += 1
             local_x += 1
-        return {"construction": construction}
+        compressed_render = self.get_compressed_render(construction)
+        return {"construction": compressed_render if compressed_view else construction}
+
+    def get_compressed_render(self, construction):
+        items = []
+        for item in construction:
+            if item["material_type"].lower() == "vault":
+                items.append("v")
+                continue
+            if item["material_type"].lower() == "player":
+                items.append("p")
+                continue
+            items.append("0" if item["passable"] else "1")
+        return "".join(items)
 
     def move(self, direction):
         direction = direction.lower()
@@ -108,7 +121,7 @@ class HouseAccess:
     def move_right(self):
         return self._teleport_to(self.player_location[0] + 1, self.player_location[1])
 
-    def _teleport_to(self, x: int, y: int):
+    def _teleport_to(self, x: int, y: int, compressed_view=True):
         if not self.is_in_house():
             return None
         material: Optional[Material] = self.house.get_material_from(x, y)
@@ -131,7 +144,7 @@ class HouseAccess:
                 }
             }
         )
-        item = self.render_surroundings()
+        item = self.render_surroundings(compressed_view=compressed_view)
         item["house_id"] = self.house_id
         item["player_location"] = self.player_location
         return item
