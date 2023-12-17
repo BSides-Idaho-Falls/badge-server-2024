@@ -73,12 +73,13 @@ class HouseAccess:
                 passable = material.material_type.value == "Air"  # TODO figure out passable
                 if not passable and x == 0 and y == 15:  # Door
                     passable = True
-                construction.append({
-                    "material_type": material.material_type.value.replace(" ", "_"),
-                    "local_location": [local_x, local_y],
-                    "absolute_location": [x, y],
-                    "passable": passable
-                })
+                if material.material_type.value != "Air":
+                    construction.append({
+                        "material_type": material.material_type.value.replace(" ", "_"),
+                        "local_location": [local_x, local_y],
+                        "absolute_location": [x, y],
+                        "passable": passable
+                    })
                 local_y += 1
             local_x += 1
         return {"construction": construction}

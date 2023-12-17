@@ -18,6 +18,7 @@ def reset_game():
         return {"success": False}, 401
     db["players"].delete_many({})
     db["houses"].delete_many({})
+    db["access"].delete_one({})
     return {"success": True}
 
 
