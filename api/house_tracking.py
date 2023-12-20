@@ -87,39 +87,62 @@ class HouseAccess:
 
     def get_compressed_render(self, construction):
         items = []
-        for item in construction:
-            if item["material_type"].lower() == "vault":
-                items.append("v")
-                continue
-            if item["material_type"].lower() == "player":
-                items.append("p")
-                continue
-            items.append("0" if item["passable"] else "1")
+        mapping = {}
+        for construction_item in construction:
+            x = construction_item["local_location"][0]
+            y = construction_item["local_location"][1]
+            mapping[f"{x}-{y}"] = construction_item
+        print(construction[0])
+        for x in range(0, 30):
+            for y in range(0, 30):
+                item = mapping.get(f"{x}-{y}")
+                if not item:
+                    items.append("0")
+                else:
+                    material_type = item["material_type"].lower()
+                    if material_type == "vault":
+                        items.append("v")
+                    elif material_type == "player":
+                        items.append("p")
+                    else:
+                        items.append("1")
         return "".join(items)
 
-    def move(self, direction):
+    def move(self, direction, compressed_view=False):
         direction = direction.lower()
         if direction not in ["left", "right", "up", "down"]:
             return False
         if direction == "left":
-            return self.move_left()
+            return self.move_left(compressed_view=compressed_view)
         if direction == "right":
-            return self.move_right()
+            return self.move_right(compressed_view=compressed_view)
         if direction == "up":
-            return self.move_up()
-        return self.move_down()  # Should always be down because of string whitelist.
+            return self.move_up(compressed_view=compressed_view)
+        return self.move_down(compressed_view=compressed_view)  # Should always be down because of string whitelist.
 
-    def move_up(self):
-        return self._teleport_to(self.player_location[0], self.player_location[1] + 1)
+    def move_up(self, compressed_view=False):
+        return self._teleport_to(
+            self.player_location[0], self.player_location[1] + 1,
+            compressed_view=compressed_view
+        )
 
-    def move_down(self):
-        return self._teleport_to(self.player_location[0], self.player_location[1] - 1)
+    def move_down(self, compressed_view=False):
+        return self._teleport_to(
+            self.player_location[0], self.player_location[1] - 1,
+            compressed_view=compressed_view
+        )
 
-    def move_left(self):
-        return self._teleport_to(self.player_location[0] - 1, self.player_location[1])
+    def move_left(self, compressed_view=False):
+        return self._teleport_to(
+            self.player_location[0] - 1, self.player_location[1],
+            compressed_view=compressed_view
+        )
 
-    def move_right(self):
-        return self._teleport_to(self.player_location[0] + 1, self.player_location[1])
+    def move_right(self, compressed_view=False):
+        return self._teleport_to(
+            self.player_location[0] + 1, self.player_location[1],
+            compressed_view=compressed_view
+        )
 
     def _teleport_to(self, x: int, y: int, compressed_view=False):
         if not self.is_in_house():

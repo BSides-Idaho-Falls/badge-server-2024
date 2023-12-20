@@ -18,11 +18,15 @@ def move_player(player_id, direction, player):
         player_id=player_id,
         house_id=house_id
     ).load()
+    compressed_view = False
+    if direction.endswith("-c"):
+        compressed_view = True
+        direction = direction.replace("-c", "")
     if not access:
         return {"success": False, "reason": "House does not exist!"}, 404
     if direction.lower() not in ["left", "right", "up", "down"]:
         return {"success": False, "reason": "Illegal direction"}, 400
-    item = access.move(direction)
+    item = access.move(direction, compressed_view=compressed_view)
     if not item:
         return {"success": False, "reason": "Unable to move in that direction"}
     item["success"] = True
