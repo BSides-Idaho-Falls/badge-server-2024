@@ -51,7 +51,7 @@ class HouseAccess:
             local_y: int = 0
             for y in range(remote_y, remote_y + 8):
                 if local_x == player_local_location[0] and local_y == player_local_location[1]:
-                    construction.append({
+                    construction.append("p" if compressed_view else {
                         "material_type": "player",
                         "local_location": [local_x, local_y],
                         "absolute_location": [x, y],
@@ -62,7 +62,7 @@ class HouseAccess:
                 material: Optional[Material] = self.house.get_material_from(x, y)
                 if not material:
                     # Out of Bounds
-                    construction.append({
+                    construction.append("1" if compressed_view else {
                         "material_type": "House_Wall",
                         "local_location": [local_x, local_y],
                         "absolute_location": [x, y],
@@ -74,25 +74,29 @@ class HouseAccess:
                 if not passable and x == 0 and y == 15:  # Door
                     passable = True
                 if material.material_type.value != "Air":
-                    construction.append({
+                    construction.append("1" if compressed_view else {
                         "material_type": material.material_type.value.replace(" ", "_"),
                         "local_location": [local_x, local_y],
                         "absolute_location": [x, y],
                         "passable": passable
                     })
+                else:
+                    if compressed_view:
+                        construction.append("0")
                 local_y += 1
             local_x += 1
-        compressed_render = self.get_compressed_render(construction)
-        return {"construction": compressed_render if compressed_view else construction}
+        #compressed_render = self.get_compressed_render(construction)
+        return {"construction": "".join(construction) if compressed_view else construction}
 
     def get_compressed_render(self, construction):
         items = []
         mapping = {}
-        for construction_item in construction:
-            x = construction_item["local_location"][0]
-            y = construction_item["local_location"][1]
+        print(construction)
+        for _, construction_item in construction:
+            print(construction_item)
+            x = construction_item["absolute_location"][0]
+            y = construction_item["absolute_location"][1]
             mapping[f"{x}-{y}"] = construction_item
-        print(construction[0])
         for x in range(0, 30):
             for y in range(0, 30):
                 item = mapping.get(f"{x}-{y}")
