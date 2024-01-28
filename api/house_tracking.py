@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional, List
+from typing import Optional, List, Union
 
 from api.house_base import House
 from api.material_base import Material
@@ -40,7 +40,7 @@ class HouseAccess:
         absolute_player_location: Optional[List[int]] = player_location or self.player_location
         if not absolute_player_location:
             return {}
-        construction: List[dict] = []
+        construction: List[Union[dict, str]] = []
         player_local_location: List[int] = [3, 3]
 
         remote_x = absolute_player_location[0] - player_local_location[0]
