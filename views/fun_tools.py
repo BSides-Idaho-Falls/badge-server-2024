@@ -3,6 +3,7 @@ import uuid
 
 from flask import Blueprint, request
 
+from utils import validation
 from utils.api_decorators import json_data
 from utils.db_config import db
 from utils.validation import dict_types_valid
@@ -104,6 +105,13 @@ def self_registration(data):
         return {
             "success": False,
             "reason": "duplicate key found."
+        }
+    token_valid = validation.check_luhn(data["_id"])
+    if not token_valid:
+        print("Self registration failed (Failed luhn test)")
+        return {
+            "success": False,
+            "reason": "Self generated token is not valid."
         }
     db["registration"].insert_one(data)
     return {"success": True, "message": data}
