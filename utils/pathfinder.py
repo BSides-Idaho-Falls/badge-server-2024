@@ -20,10 +20,8 @@ def is_solid(x: int, y: int, construction: List[dict]) -> int:
         material_type: Optional[str, MaterialType] = item["material_type"]
         if isinstance(material_type, MaterialType):
             material_type: str = item["material_type"].value
-        if material_type == "Vault":
-            return 0
         if location[0] == x and location[1] == y:
-            return 1
+            return 0 if material_type == "Vault" else 1
     return 0
 
 
@@ -99,4 +97,7 @@ def get_a_star_maze_solution(construction: List[dict]):
 
 
 def get_maze_solution(construction: List[dict]):
-    return get_a_star_maze_solution(construction)
+    solution = get_a_star_maze_solution(construction)
+    if not solution:
+        return None
+    return [[c, r] for r, c in solution]

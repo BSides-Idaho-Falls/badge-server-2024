@@ -91,6 +91,15 @@ class House:
             }
         ]
 
+    def get_construction_as_dict(self) -> List[dict]:
+        items: List[dict] = []
+        for item in self.construction:
+            items.append({
+                "material_type": item["material_type"].value,
+                "location": item["location"]
+            })
+        return items
+
     @staticmethod
     def in_bounds(x: int, y: int):
         in_square: bool = not (x < MIX_X or x > MAX_X or y < MIN_Y or y > MAX_Y)

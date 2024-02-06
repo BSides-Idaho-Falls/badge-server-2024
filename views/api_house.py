@@ -6,6 +6,7 @@ from api.house_base import House, VaultContents
 from api.material_base import Material, MaterialType
 from api.materials import Air
 from api.player_base import Player
+from utils import pathfinder
 from utils.api_decorators import has_house, player_valid, json_data
 from utils.validation import dict_types_valid
 
@@ -181,5 +182,10 @@ def house_editor(house: House, data: dict) -> Tuple[dict, int]:
     success, removed = house.set_item(material_type, data["x"], data["y"])
     if success and removed:
         vault_contents.increment_material_count(removed["material_type"])
+    if not success:
+        return {"success": False}, 200
+    solution = pathfinder.get_maze_solution(house.get_construction_as_dict())
+    if material_type != MaterialType.AIR and not solution:
+        return {"success": False, "reason": "No path from door to vault"}, 200
     house.save()
-    return {"success": success}, 200
+    return {"success": success, "solution": solution or []}, 200
