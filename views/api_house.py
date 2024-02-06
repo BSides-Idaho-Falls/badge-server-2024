@@ -8,6 +8,7 @@ from api.materials import Air
 from api.player_base import Player
 from utils import pathfinder
 from utils.api_decorators import has_house, player_valid, json_data
+from utils.conversions import solution_to_lucky_numbers
 from utils.validation import dict_types_valid
 
 mod = Blueprint('api_house', __name__)
@@ -85,10 +86,10 @@ def move_vault(player_id, player):
             "reason": "Malformed Request. Must include 'x' and 'y' coordinates"
         }, 400
 
-    success: bool = house.move_vault(data["x"], data["y"])
+    success: bool = house.move_vault(data["x"], data["y"])  # Solution check is included
+    solution = pathfinder.get_maze_solution(house.get_construction_as_dict())
     house.save()
-
-    return {"success": success}, 200 if success else 400
+    return {"success": success, "lucky_numbers": solution_to_lucky_numbers(solution)}, 200 if success else 400
 
 
 @mod.route("/api/edit-house/<player_id>/build", methods=["POST"])
@@ -188,4 +189,6 @@ def house_editor(house: House, data: dict) -> Tuple[dict, int]:
     if material_type != MaterialType.AIR and not solution:
         return {"success": False, "reason": "No path from door to vault"}, 200
     house.save()
-    return {"success": success, "solution": solution or []}, 200
+    # Lucky numbers are a list of coordinates with a solution to solve the maze from
+    # the door to the vault
+    return {"success": success, "lucky_numbers": solution_to_lucky_numbers(solution)}, 200

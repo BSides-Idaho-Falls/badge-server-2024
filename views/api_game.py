@@ -3,6 +3,7 @@ from typing import Optional
 from flask import Blueprint
 
 from api.house_tracking import HouseAccess
+from utils import robbery
 from utils.api_decorators import has_house
 
 mod = Blueprint('api_game', __name__)
@@ -66,7 +67,7 @@ def leave_house(player_id, player):
         house_id=house_id
     ).load()
     if not access:
-        # Shouldn't happen. Access was there, but house no longer exist.
+        # Shouldn't happen. Access was there, but the house no longer exists.
         # Evict player from deleted house
         HouseAccess.evict(player_id)
         return {"success": False, "reason": "House does not exist!"}, 404
@@ -77,5 +78,21 @@ def leave_house(player_id, player):
 @mod.route("/api/game/<player_id>/rob_house", methods=["POST"])
 @has_house
 def rob_house(player_id, player):
-
-    return {"success": True}
+    house_to_rob = robbery.find_unoccupied_house(exclusions=[player.house_id])
+    if not house_to_rob:
+        return {"success": False, "reason": "There are no available houses to rob!"}
+    access: HouseAccess = HouseAccess(
+        player_id=player_id,
+        house_id=house_to_rob
+    ).load()
+    if not access:
+        return {"success": False, "reason": "House does not exist!"}, 404
+    if access.is_in_house():
+        return {"success": False, "reason": "You are already in the house!"}, 400
+    if not access.can_enter_house():
+        return {"success": False, "reason": "Can't enter house at this time. Is someone there?"}, 401
+    response = access.enter_house()
+    if not response:
+        return {"success": False, "reason": "Unknown error occurred."}, 500
+    response["success"] = True
+    return response
