@@ -73,8 +73,6 @@ def get_a_star_maze_solution(construction: List[dict]):
     """
     start, end, maze = deconstruct_house(construction)
     rows, cols = len(maze), len(maze[0])
-    print(maze)
-    print(f"Start: {start}, end: {end}")
     open_set = []
     heapq.heappush(open_set, (0, start))
 
@@ -86,7 +84,6 @@ def get_a_star_maze_solution(construction: List[dict]):
         current_f, current = heapq.heappop(open_set)
         if current == end:
             path = reconstruct_path(came_from, end)
-            print(path)
             return path
 
         for neighbor in get_neighbors(current, maze, rows, cols):
