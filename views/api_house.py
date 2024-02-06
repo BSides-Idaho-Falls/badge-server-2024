@@ -54,7 +54,7 @@ def abandon_house(player_id, player):
 
 @mod.route("/api/edit-house/<player_id>/move-vault", methods=["POST"])
 @has_house
-def move_vault(player_id):
+def move_vault(player_id, player):
     api_token: str = request.headers.get("X-API-Token")
     player: Player = Player(player_id).load()
     if player.token != api_token:
@@ -85,6 +85,7 @@ def move_vault(player_id):
         }, 400
 
     success: bool = house.move_vault(data["x"], data["y"])
+    house.save()
 
     return {"success": success}, 200 if success else 400
 

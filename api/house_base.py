@@ -4,6 +4,7 @@ from typing import Optional, Union, List
 
 from api.material_base import MaterialType, Material
 from api.materials import Air
+from utils import pathfinder
 from utils.db_config import db
 
 MIX_X = 0
@@ -113,6 +114,10 @@ class House:
             "material_type": MaterialType.VAULT,
             "location": [x, y]
         })
+        solution = pathfinder.get_maze_solution(construction_list)
+        if not solution:
+            return False
+        self.construction = construction_list
         return True
 
     def new(self):

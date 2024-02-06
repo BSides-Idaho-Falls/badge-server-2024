@@ -1,10 +1,14 @@
 import heapq
 from typing import List, Optional
 
+from api.material_base import MaterialType
+
 
 def extract_vault_location(construction: List[dict]) -> Optional[List[int]]:
     for item in construction:
-        material_type: str = item["material_type"]
+        material_type: Optional[str, MaterialType] = item["material_type"]
+        if isinstance(material_type, MaterialType):
+            material_type: str = item["material_type"].value
         if material_type == "Vault":
             return item["location"]
     return None
@@ -13,6 +17,11 @@ def extract_vault_location(construction: List[dict]) -> Optional[List[int]]:
 def is_solid(x: int, y: int, construction: List[dict]) -> int:
     for item in construction:
         location = item["location"]
+        material_type: Optional[str, MaterialType] = item["material_type"]
+        if isinstance(material_type, MaterialType):
+            material_type: str = item["material_type"].value
+        if material_type == "Vault":
+            return 0
         if location[0] == x and location[1] == y:
             return 1
     return 0
@@ -27,8 +36,8 @@ def deconstruct_house(construction: List[dict]):
             is_solid(x, y, construction) for x in range(0, 31)
         ])
     return (
-        (door_location[0], door_location[1]),
-        (vault_location[0], vault_location[1]),
+        (door_location[1], door_location[0]),
+        (vault_location[1], vault_location[0]),
         rows
     )
 
@@ -37,10 +46,15 @@ def heuristic(a, b):
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
 
 
-def get_neighbors(pos, rows, cols):
+def get_neighbors(pos, maze, rows, cols):
     directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]
     neighbors = [(pos[0] + dr, pos[1] + dc) for dr, dc in directions]
-    return [(r, c) for r, c in neighbors if 0 <= r < rows and 0 <= c < cols]
+    items = []
+    for r, c in neighbors:
+        if rows > r >= 0 and 0 <= c < cols:
+            if maze[r][c] == 0:
+                items.append((r, c))
+    return items
 
 
 def reconstruct_path(came_from, current):
@@ -59,6 +73,8 @@ def get_a_star_maze_solution(construction: List[dict]):
     """
     start, end, maze = deconstruct_house(construction)
     rows, cols = len(maze), len(maze[0])
+    print(maze)
+    print(f"Start: {start}, end: {end}")
     open_set = []
     heapq.heappush(open_set, (0, start))
 
@@ -68,12 +84,12 @@ def get_a_star_maze_solution(construction: List[dict]):
 
     while open_set:
         current_f, current = heapq.heappop(open_set)
-
         if current == end:
             path = reconstruct_path(came_from, end)
+            print(path)
             return path
 
-        for neighbor in get_neighbors(current, rows, cols):
+        for neighbor in get_neighbors(current, maze, rows, cols):
             tentative_g_score = g_score[current] + 1
 
             if neighbor not in g_score or tentative_g_score < g_score[neighbor]:
