@@ -1,4 +1,5 @@
 import json
+import random
 import uuid
 from typing import Optional, Union, List
 
@@ -134,7 +135,7 @@ class House:
         self.construction: list = [
             {
                 "material_type": MaterialType.VAULT,
-                "location": [30, 15]
+                "location": [random.randint(25, 30), random.randint(10, 20)]
             }
         ]
         for x in range(2, 7):

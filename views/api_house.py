@@ -3,6 +3,7 @@ from typing import Tuple
 from flask import Blueprint, request
 
 from api.house_base import House, VaultContents
+from api.house_tracking import HouseAccess
 from api.material_base import Material, MaterialType
 from api.materials import Air
 from api.player_base import Player
@@ -86,6 +87,17 @@ def move_vault(player_id, player):
             "reason": "Malformed Request. Must include 'x' and 'y' coordinates"
         }, 400
 
+    access: HouseAccess = HouseAccess(
+        player_id=player_id,
+        house_id=player.house_id
+    ).load()
+    if not access:
+        return {"success": False, "reason": "House does not exist!"}, 404
+    if not access.is_in_house():
+        return {"success": False, "reason": "You must be in your own house"}, 400
+    if access.house_id != player.house_id:
+        return {"success": False, "reason": "You can't be in someone else's house while editing."}
+
     success: bool = house.move_vault(data["x"], data["y"])  # Solution check is included
     solution = pathfinder.get_maze_solution(house.get_construction_as_dict())
     house.save()
@@ -119,6 +131,17 @@ def build_square(player_id, player, data):
         return {"success": False, "reason": "malformed data"}, 400
 
     x, y = data["x"], data["y"]
+
+    access: HouseAccess = HouseAccess(
+        player_id=player_id,
+        house_id=player.house_id
+    ).load()
+    if not access:
+        return {"success": False, "reason": "House does not exist!"}, 404
+    if not access.is_in_house():
+        return {"success": False, "reason": "You must be in your own house"}, 400
+    if access.house_id != player.house_id:
+        return {"success": False, "reason": "You can't be in someone else's house while editing."}
 
     house: House = House(house_id=player.house_id).load()
 
@@ -159,6 +182,17 @@ def clear_square(player_id, player, data):
         }
     }):
         return {"success": False, "reason": "Malformed Data"}, 400
+
+    access: HouseAccess = HouseAccess(
+        player_id=player_id,
+        house_id=player.house_id
+    ).load()
+    if not access:
+        return {"success": False, "reason": "House does not exist!"}, 404
+    if not access.is_in_house():
+        return {"success": False, "reason": "You must be in your own house"}, 400
+    if access.house_id != player.house_id:
+        return {"success": False, "reason": "You can't be in someone else's house while editing."}
 
     house: House = House(house_id=player.house_id).load()
 
