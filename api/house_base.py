@@ -4,6 +4,7 @@ from typing import Optional, Union, List
 
 from api.material_base import MaterialType, Material
 from api.materials import Air
+from utils import pathfinder
 from utils.db_config import db
 
 MIX_X = 0
@@ -90,9 +91,18 @@ class House:
             }
         ]
 
+    def get_construction_as_dict(self) -> List[dict]:
+        items: List[dict] = []
+        for item in self.construction:
+            items.append({
+                "material_type": item["material_type"].value,
+                "location": item["location"]
+            })
+        return items
+
     @staticmethod
     def in_bounds(x: int, y: int):
-        in_square: bool = not (x < MIX_X or x > MAX_X or MIN_Y < 0 or y > MAX_Y)
+        in_square: bool = not (x < MIX_X or x > MAX_X or y < MIN_Y or y > MAX_Y)
         if not in_square:
             return False
         if x == 0 and y == 15:
@@ -113,6 +123,10 @@ class House:
             "material_type": MaterialType.VAULT,
             "location": [x, y]
         })
+        solution = pathfinder.get_maze_solution(construction_list)
+        if not solution:
+            return False
+        self.construction = construction_list
         return True
 
     def new(self):

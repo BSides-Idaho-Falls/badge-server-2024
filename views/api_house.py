@@ -6,7 +6,9 @@ from api.house_base import House, VaultContents
 from api.material_base import Material, MaterialType
 from api.materials import Air
 from api.player_base import Player
+from utils import pathfinder
 from utils.api_decorators import has_house, player_valid, json_data
+from utils.conversions import solution_to_lucky_numbers
 from utils.validation import dict_types_valid
 
 mod = Blueprint('api_house', __name__)
@@ -54,7 +56,7 @@ def abandon_house(player_id, player):
 
 @mod.route("/api/edit-house/<player_id>/move-vault", methods=["POST"])
 @has_house
-def move_vault(player_id):
+def move_vault(player_id, player):
     api_token: str = request.headers.get("X-API-Token")
     player: Player = Player(player_id).load()
     if player.token != api_token:
@@ -84,9 +86,10 @@ def move_vault(player_id):
             "reason": "Malformed Request. Must include 'x' and 'y' coordinates"
         }, 400
 
-    success: bool = house.move_vault(data["x"], data["y"])
-
-    return {"success": success}, 200 if success else 400
+    success: bool = house.move_vault(data["x"], data["y"])  # Solution check is included
+    solution = pathfinder.get_maze_solution(house.get_construction_as_dict())
+    house.save()
+    return {"success": success, "lucky_numbers": solution_to_lucky_numbers(solution)}, 200 if success else 400
 
 
 @mod.route("/api/edit-house/<player_id>/build", methods=["POST"])
@@ -180,5 +183,12 @@ def house_editor(house: House, data: dict) -> Tuple[dict, int]:
     success, removed = house.set_item(material_type, data["x"], data["y"])
     if success and removed:
         vault_contents.increment_material_count(removed["material_type"])
+    if not success:
+        return {"success": False}, 200
+    solution = pathfinder.get_maze_solution(house.get_construction_as_dict())
+    if material_type != MaterialType.AIR and not solution:
+        return {"success": False, "reason": "No path from door to vault"}, 200
     house.save()
-    return {"success": success}, 200
+    # Lucky numbers are a list of coordinates with a solution to solve the maze from
+    # the door to the vault
+    return {"success": success, "lucky_numbers": solution_to_lucky_numbers(solution)}, 200

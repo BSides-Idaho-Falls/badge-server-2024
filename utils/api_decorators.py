@@ -7,7 +7,7 @@ from api.player_base import Player
 from utils.db_config import db
 
 
-DO_PRINTS: bool = True
+DO_PRINTS: bool = False
 
 
 def log(message):

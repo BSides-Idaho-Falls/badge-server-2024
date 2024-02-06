@@ -1,5 +1,5 @@
 import datetime
-from typing import Optional, List
+from typing import Optional, List, Union
 
 from api.house_base import House
 from api.material_base import Material
@@ -36,11 +36,11 @@ class HouseAccess:
         })
         return False if db_access else True  # Can't enter while someone else is there
 
-    def render_surroundings(self, player_location: Optional[List[int]] = None) -> dict:
+    def render_surroundings(self, player_location: Optional[List[int]] = None, compressed_view: bool = False) -> dict:
         absolute_player_location: Optional[List[int]] = player_location or self.player_location
         if not absolute_player_location:
             return {}
-        construction: List[dict] = []
+        construction: List[Union[dict, str]] = []
         player_local_location: List[int] = [3, 3]
 
         remote_x = absolute_player_location[0] - player_local_location[0]
@@ -51,7 +51,7 @@ class HouseAccess:
             local_y: int = 0
             for y in range(remote_y, remote_y + 8):
                 if local_x == player_local_location[0] and local_y == player_local_location[1]:
-                    construction.append({
+                    construction.append("p" if compressed_view else {
                         "material_type": "player",
                         "local_location": [local_x, local_y],
                         "absolute_location": [x, y],
@@ -62,7 +62,7 @@ class HouseAccess:
                 material: Optional[Material] = self.house.get_material_from(x, y)
                 if not material:
                     # Out of Bounds
-                    construction.append({
+                    construction.append("1" if compressed_view else {
                         "material_type": "House_Wall",
                         "local_location": [local_x, local_y],
                         "absolute_location": [x, y],
@@ -73,41 +73,82 @@ class HouseAccess:
                 passable = material.material_type.value == "Air"  # TODO figure out passable
                 if not passable and x == 0 and y == 15:  # Door
                     passable = True
-                construction.append({
-                    "material_type": material.material_type.value.replace(" ", "_"),
-                    "local_location": [local_x, local_y],
-                    "absolute_location": [x, y],
-                    "passable": passable
-                })
+                if material.material_type.value != "Air":
+                    construction.append("1" if compressed_view else {
+                        "material_type": material.material_type.value.replace(" ", "_"),
+                        "local_location": [local_x, local_y],
+                        "absolute_location": [x, y],
+                        "passable": passable
+                    })
+                else:
+                    if compressed_view:
+                        construction.append("0")
                 local_y += 1
             local_x += 1
-        return {"construction": construction}
+        #compressed_render = self.get_compressed_render(construction)
+        return {"construction": "".join(construction) if compressed_view else construction}
 
-    def move(self, direction):
+    def get_compressed_render(self, construction):
+        items = []
+        mapping = {}
+        print(construction)
+        for _, construction_item in construction:
+            print(construction_item)
+            x = construction_item["absolute_location"][0]
+            y = construction_item["absolute_location"][1]
+            mapping[f"{x}-{y}"] = construction_item
+        for x in range(0, 30):
+            for y in range(0, 30):
+                item = mapping.get(f"{x}-{y}")
+                if not item:
+                    items.append("0")
+                else:
+                    material_type = item["material_type"].lower()
+                    if material_type == "vault":
+                        items.append("v")
+                    elif material_type == "player":
+                        items.append("p")
+                    else:
+                        items.append("1")
+        return "".join(items)
+
+    def move(self, direction, compressed_view=False):
         direction = direction.lower()
         if direction not in ["left", "right", "up", "down"]:
             return False
         if direction == "left":
-            return self.move_left()
+            return self.move_left(compressed_view=compressed_view)
         if direction == "right":
-            return self.move_right()
+            return self.move_right(compressed_view=compressed_view)
         if direction == "up":
-            return self.move_up()
-        return self.move_down()  # Should always be down because of string whitelist.
+            return self.move_up(compressed_view=compressed_view)
+        return self.move_down(compressed_view=compressed_view)  # Should always be down because of string whitelist.
 
-    def move_up(self):
-        return self._teleport_to(self.player_location[0], self.player_location[1] + 1)
+    def move_up(self, compressed_view=False):
+        return self._teleport_to(
+            self.player_location[0], self.player_location[1] + 1,
+            compressed_view=compressed_view
+        )
 
-    def move_down(self):
-        return self._teleport_to(self.player_location[0], self.player_location[1] - 1)
+    def move_down(self, compressed_view=False):
+        return self._teleport_to(
+            self.player_location[0], self.player_location[1] - 1,
+            compressed_view=compressed_view
+        )
 
-    def move_left(self):
-        return self._teleport_to(self.player_location[0] - 1, self.player_location[1])
+    def move_left(self, compressed_view=False):
+        return self._teleport_to(
+            self.player_location[0] - 1, self.player_location[1],
+            compressed_view=compressed_view
+        )
 
-    def move_right(self):
-        return self._teleport_to(self.player_location[0] + 1, self.player_location[1])
+    def move_right(self, compressed_view=False):
+        return self._teleport_to(
+            self.player_location[0] + 1, self.player_location[1],
+            compressed_view=compressed_view
+        )
 
-    def _teleport_to(self, x: int, y: int):
+    def _teleport_to(self, x: int, y: int, compressed_view=False):
         if not self.is_in_house():
             return None
         material: Optional[Material] = self.house.get_material_from(x, y)
@@ -130,7 +171,7 @@ class HouseAccess:
                 }
             }
         )
-        item = self.render_surroundings()
+        item = self.render_surroundings(compressed_view=compressed_view)
         item["house_id"] = self.house_id
         item["player_location"] = self.player_location
         return item
