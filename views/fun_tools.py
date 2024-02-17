@@ -3,6 +3,7 @@ import uuid
 
 from flask import Blueprint, request
 
+from api.house_tracking import HouseAccess
 from utils import validation
 from utils.api_decorators import json_data
 from utils.db_config import db
@@ -73,6 +74,31 @@ def disable_registration():
     config_item["enabled"] = False
     db["config"].find_one_and_replace({"_id": "self-registration"}, config_item)
     return {"success": True}
+
+
+@mod.route("/api/trigger-evictions", methods=["POST"])
+def trigger_evictions():
+    admin_token = request.headers.get("X-API-Token", "")
+    valid_token = os.environ.get("ADMINISTRATION_KEY", "default_token_hack_me_boi")
+    if admin_token != valid_token:
+        return {"success": False}, 401
+    evictions: int = 0
+    for item in db["access"].find({}):
+        if HouseAccess.visit_too_long(item):
+            HouseAccess.evict(item["player_id"])
+            evictions += 1
+    return {"success": True, "evictions": evictions}
+
+
+@mod.route("/api/trigger-evictions/all", methods=["POST"])
+def trigger_evictions():
+    admin_token = request.headers.get("X-API-Token", "")
+    valid_token = os.environ.get("ADMINISTRATION_KEY", "default_token_hack_me_boi")
+    if admin_token != valid_token:
+        return {"success": False}, 401
+    items = db["access"].find({}, ["_id"])
+    evictions: int = len([x for x in items])
+    return {"success": True, "evictions": evictions}
 
 
 @mod.route("/api/self-register", methods=["POST"])

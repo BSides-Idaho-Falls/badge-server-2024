@@ -4,6 +4,7 @@ import uuid
 
 from flask import Flask
 
+from utils import startup
 from utils.db_config import db
 from views import assets, api_house, api_player, renders, fun_tools, api_shop, api_game
 
@@ -46,6 +47,7 @@ def page_not_found(e):
 
 
 if __name__ == '__main__':
+    startup.house_evictions()  # Clean up users who have been in a house too long.
     host = "0.0.0.0"
     debug_mode = os.environ.get("DEBUG_MODE", "false").lower() == "true"
     app.run(debug=debug_mode, port=8080, host=host)

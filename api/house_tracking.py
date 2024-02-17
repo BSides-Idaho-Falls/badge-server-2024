@@ -34,7 +34,13 @@ class HouseAccess:
         db_access = db["access"].find_one({
             "house_id": self.house_id
         })
-        return False if db_access else True  # Can't enter while someone else is there
+        if not db_access:
+            return True
+        visit_too_long = HouseAccess.visit_too_long(db_access)
+        if visit_too_long:
+            HouseAccess.evict(db_access["player_id"])
+            return True
+        return False
 
     def render_surroundings(self, player_location: Optional[List[int]] = None, compressed_view: bool = False) -> dict:
         absolute_player_location: Optional[List[int]] = player_location or self.player_location
@@ -199,6 +205,21 @@ class HouseAccess:
         db["access"].delete_one({
             "player_id": self.player_id
         })
+
+    @staticmethod
+    def visit_too_long(access, house_owner=False):
+        if not access:
+            return False
+        latest_activity = datetime.datetime.fromisoformat(access["latest_activity"])
+        access_time = datetime.datetime.fromisoformat(access["access_time"])
+        now = datetime.datetime.now()
+        activity_ago = now - latest_activity
+        entered_ago = now - access_time
+        if activity_ago > datetime.timedelta(seconds=45):
+            return True
+        if entered_ago > datetime.timedelta(minutes=10 if house_owner else 3):
+            return True
+        return False
 
     @staticmethod
     def evict(player_id) -> dict:
