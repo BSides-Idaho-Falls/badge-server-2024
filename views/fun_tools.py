@@ -91,7 +91,7 @@ def trigger_evictions():
 
 
 @mod.route("/api/trigger-evictions/all", methods=["POST"])
-def trigger_evictions():
+def trigger_all_evictions():
     admin_token = request.headers.get("X-API-Token", "")
     valid_token = os.environ.get("ADMINISTRATION_KEY", "default_token_hack_me_boi")
     if admin_token != valid_token:
