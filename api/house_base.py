@@ -68,6 +68,12 @@ class VaultContents:
         self.set_material_count(material_type, self.materials[material_type] + increment_by)
         return True
 
+    def increase_dollars(self, amount=1):
+        self.dollars += amount
+
+    def decrease_dollars(self, amount=1):
+        self.dollars -= amount
+
     def as_dict(self):
         contents: dict = self.__dict__
         return contents

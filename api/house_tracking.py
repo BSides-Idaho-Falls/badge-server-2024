@@ -11,8 +11,8 @@ from utils.db_config import db
 class HouseAccess:
 
     def __init__(self, player_id: str, house_id: str):
-        self.player_id = player_id
-        self.house_id = house_id
+        self.player_id = player_id  # Player inside of house (Not house's owner)
+        self.house_id = house_id  # House player is inside of
         self.house: Optional[House] = None
         self.player_location: Optional[List[int]] = None
 
@@ -24,6 +24,16 @@ class HouseAccess:
         if db_access:
             self.player_location = db_access["player_location"]
         return self if self.house else None
+
+    def get_players_house_id(self):
+        item = db["players"].find_one({"player_id": self.player_id}, ["house_id"])
+        if not item:
+            return None
+        return item.get("house_id")
+
+    def player_owns_house(self):
+        house_id_compare = self.get_players_house_id()
+        return house_id_compare and house_id_compare == self.house_id
 
     def is_in_house(self):
         db_access = db["access"].find_one({
@@ -147,7 +157,7 @@ class HouseAccess:
     def move(self, direction, compressed_view=False):
         direction = direction.lower()
         if direction not in ["left", "right", "up", "down"]:
-            return False
+            return None
         if direction == "left":
             return self.move_left(compressed_view=compressed_view)
         if direction == "right":
@@ -180,6 +190,23 @@ class HouseAccess:
             compressed_view=compressed_view
         )
 
+    def rob_vault(self):
+        if self.player_owns_house():
+            return  # Can't rob your own house!
+        house: House = House(self.house_id).load()
+        robbers_house_id = self.get_players_house_id()
+        if not robbers_house_id:
+            return
+        robbers_house: House = House(house_id=robbers_house_id)
+        dollars: int = house.vault_contents.dollars
+        robbers_house.vault_contents.increase_dollars(dollars)
+        house.vault_contents.dollars = 0
+
+        house.save()
+        robbers_house.save()
+
+        return {"success": True, "robbed": True, "contents": {"dollars": dollars}}
+
     def _teleport_to(self, x: int, y: int, compressed_view=False):
         if not self.is_in_house():
             return None
@@ -191,6 +218,8 @@ class HouseAccess:
         if not material.passable:
             return None
         if material.material_type.value != "Air":
+            if material.material_type == "Vault":
+                self.rob_vault()
             return None  # material.passable is bugged, figure out why?
         print(f"{self.player_id} is moving to {x},{y} in house {self.house_id}")
         self.player_location = [x, y]
