@@ -1,3 +1,4 @@
+import datetime
 from typing import Optional
 
 from flask import Blueprint
@@ -78,6 +79,13 @@ def leave_house(player_id, player):
 @mod.route("/api/game/<player_id>/rob_house", methods=["POST"])
 @has_house
 def rob_house(player_id, player):
+    rob_timeout: int = player.can_rob_house()
+    if rob_timeout > 0:
+        return {
+            "success": False,
+            "reason": "You are trying to rob houses too often!",
+            "seconds": 45 - rob_timeout
+        }
     house_to_rob = robbery.find_unoccupied_house(exclusions=[player.house_id])
     if not house_to_rob:
         return {"success": False, "reason": "There are no available houses to rob!"}
@@ -95,4 +103,6 @@ def rob_house(player_id, player):
     if not response:
         return {"success": False, "reason": "Unknown error occurred."}, 500
     response["success"] = True
+    player.last_robbery_attempt = datetime.datetime.now()
+    player.save()
     return response
