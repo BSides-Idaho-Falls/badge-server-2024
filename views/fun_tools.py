@@ -142,3 +142,11 @@ def self_registration(data):
     db["registration"].insert_one(data)
     return {"success": True, "message": data}
 
+
+@mod.route("/api/test/bytes")
+def get_some_bytes():
+    byte_list = b'\x05' * 16
+    bites = bytes(byte_list)
+    response_data = {'bytes': bites.decode('latin-1'), 'additional_data': "x"}
+    return response_data
+

@@ -1,4 +1,5 @@
 import datetime
+import json
 from typing import Optional, List, Union
 
 from api.house_base import House
@@ -46,18 +47,34 @@ class HouseAccess:
         absolute_player_location: Optional[List[int]] = player_location or self.player_location
         if not absolute_player_location:
             return {}
-        construction: List[Union[dict, str]] = []
         player_local_location: List[int] = [3, 3]
 
         remote_x = absolute_player_location[0] - player_local_location[0]
         remote_y = absolute_player_location[1] - player_local_location[1]
 
+        compressed_render = self.get_compressed_render(remote_x, remote_y, player_local_location)
+        explicit_render = self.get_explicit_render(remote_x, remote_y, player_local_location)
+        c_size = len(json.dumps(compressed_render))
+        e_size = len(json.dumps(explicit_render))
+        print(f"{c_size} - {e_size}")
+        if compressed_view:
+            if c_size > e_size:
+                print(
+                    f"Explicit render is smaller than the compressed! "
+                    f"Returning this instead. {c_size} > {e_size}"
+                )
+                return explicit_render
+            return compressed_render
+        return explicit_render
+
+    def get_explicit_render(self, remote_x, remote_y, player_local_location):
         local_x: int = 0
+        construction: List[Union[dict, str]] = []
         for x in range(remote_x, remote_x + 8):
             local_y: int = 0
             for y in range(remote_y, remote_y + 8):
                 if local_x == player_local_location[0] and local_y == player_local_location[1]:
-                    construction.append("p" if compressed_view else {
+                    construction.append({
                         "material_type": "player",
                         "local_location": [local_x, local_y],
                         "absolute_location": [x, y],
@@ -68,7 +85,7 @@ class HouseAccess:
                 material: Optional[Material] = self.house.get_material_from(x, y)
                 if not material:
                     # Out of Bounds
-                    construction.append("1" if compressed_view else {
+                    construction.append({
                         "material_type": "House_Wall",
                         "local_location": [local_x, local_y],
                         "absolute_location": [x, y],
@@ -80,43 +97,49 @@ class HouseAccess:
                 if not passable and x == 0 and y == 15:  # Door
                     passable = True
                 if material.material_type.value != "Air":
-                    construction.append("1" if compressed_view else {
+                    construction.append({
                         "material_type": material.material_type.value.replace(" ", "_"),
                         "local_location": [local_x, local_y],
                         "absolute_location": [x, y],
                         "passable": passable
                     })
-                else:
-                    if compressed_view:
-                        construction.append("0")
                 local_y += 1
             local_x += 1
-        #compressed_render = self.get_compressed_render(construction)
-        return {"construction": "".join(construction) if compressed_view else construction}
+        return {"construction": construction}
 
-    def get_compressed_render(self, construction):
-        items = []
-        mapping = {}
-        print(construction)
-        for _, construction_item in construction:
-            print(construction_item)
-            x = construction_item["absolute_location"][0]
-            y = construction_item["absolute_location"][1]
-            mapping[f"{x}-{y}"] = construction_item
-        for x in range(0, 30):
-            for y in range(0, 30):
-                item = mapping.get(f"{x}-{y}")
-                if not item:
-                    items.append("0")
+    def get_compressed_render(self, remote_x, remote_y, player_local_location):
+        # TODO: Make even smaller w/ bytes
+        construction: List[str] = []
+        local_x: int = 0
+        for x in range(remote_x, remote_x + 8):
+            local_y: int = 0
+            for y in range(remote_y, remote_y + 8):
+                if local_x == player_local_location[0] and local_y == player_local_location[1]:
+                    construction.append("p")
+                    local_y += 1
+                    continue
+                material: Optional[Material] = self.house.get_material_from(x, y)
+                if not material:
+                    # Out of Bounds
+                    value = "1"
+                    if x == 0 and y == 15:
+                        value = "d"
+                    construction.append(value)
+                    local_y += 1
+                    continue
+                if material.material_type.value != "Air":
+                    value = "1"
+                    if x == 0 and y == 15:
+                        value = "d"
+                    construction.append(value)
                 else:
-                    material_type = item["material_type"].lower()
-                    if material_type == "vault":
-                        items.append("v")
-                    elif material_type == "player":
-                        items.append("p")
-                    else:
-                        items.append("1")
-        return "".join(items)
+                    value = "0"
+                    if x == 0 and y == 15:
+                        value = "d"
+                    construction.append(value)
+                local_y += 1
+            local_x += 1
+        return {"construction": "".join(construction)}
 
     def move(self, direction, compressed_view=False):
         direction = direction.lower()
@@ -182,7 +205,7 @@ class HouseAccess:
         item["player_location"] = self.player_location
         return item
 
-    def enter_house(self):
+    def enter_house(self, compressed_view=False):
         if self.is_in_house():
             return None  # Already in house
         location = [0, 15]
@@ -194,7 +217,7 @@ class HouseAccess:
             "player_location": location
         })
         self.player_location = location
-        item = self.render_surroundings()
+        item = self.render_surroundings(compressed_view=compressed_view)
         item["house_id"] = self.house_id
         item["player_location"] = location
         return item
