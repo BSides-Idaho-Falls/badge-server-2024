@@ -101,7 +101,9 @@ def rob_house(player_id, player):
         return {"success": False, "reason": "You are already in the house!"}, 400
     if not access.can_enter_house():
         return {"success": False, "reason": "Can't enter house at this time. Is someone there?"}, 401
-    response = access.enter_house()
+    compress_header = request.headers.get("c")
+    compressed_view = compress_header and compress_header == "y"
+    response = access.enter_house(compressed_view=compressed_view)
     if not response:
         return {"success": False, "reason": "Unknown error occurred."}, 500
     response["success"] = True
