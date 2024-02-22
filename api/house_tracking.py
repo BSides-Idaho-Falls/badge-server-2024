@@ -128,10 +128,13 @@ class HouseAccess:
                     local_y += 1
                     continue
                 if material.material_type.value != "Air":
-                    value = "1"
-                    if x == 0 and y == 15:
-                        value = "d"
-                    construction.append(value)
+                    if material.material_type.value == "Vault":
+                        construction.append("v")
+                    else:
+                        value = "1"
+                        if x == 0 and y == 15:
+                            value = "d"
+                        construction.append(value)
                 else:
                     value = "0"
                     if x == 0 and y == 15:

@@ -31,6 +31,7 @@ def move_player(player_id, direction, player):
     item = access.move(direction, compressed_view=compressed_view)
     if not item:
         return {"success": False, "reason": "Unable to move in that direction"}
+
     item["success"] = True
     return item
 
