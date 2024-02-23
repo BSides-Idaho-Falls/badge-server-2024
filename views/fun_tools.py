@@ -32,7 +32,7 @@ def reset_registration():
         return {"success": False}, 401
     db["registration"].delete_many({})
     default_item: dict = {
-        "_id": str(uuid.uuid4()),
+        "_id": validation.generate_luhn(16),
         "mac": "00:00:00:00:00:00",
         "notes": "Default Registration Value"
     }

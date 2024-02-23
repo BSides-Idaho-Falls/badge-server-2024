@@ -43,9 +43,9 @@ def check_luhn(number: str) -> bool:
     return luhn_checksum(number) == 0
 
 
-def generate_luhn(self, size: int) -> str:
+def generate_luhn(size: int) -> str:
     random_number: str = "".join([str(random.randint(0, 9)) for _ in range(size - 1)])
     # 0 is not a typo, it's padding for the checksum
-    checksum_digit = self.luhn_checksum(f"{random_number}0")
+    checksum_digit = luhn_checksum(f"{random_number}0")
     luhn = f"{random_number}{checksum_digit}"
     return luhn
