@@ -26,7 +26,7 @@ class VaultContents:
         self.materials["Wooden_Wall"] = 20  # Start with 20 walls
 
     def load(self, json_value):
-        self.dollars = json_value.get("dollars", 2000)  # Starting money if DB value is null
+        self.dollars = json_value["dollars"] if "dollars" in json_value else 2000  # Starting money if DB value is null
         for item in MaterialType:
             if item in [MaterialType.VAULT, MaterialType.AIR]:
                 continue
@@ -237,6 +237,7 @@ class House:
             setattr(self, k, v)
         self.construction = c2
         vault_contents_dict = item.get("vault_contents", {})
+        print(f"Loading vault contents: {json.dumps(vault_contents_dict)}")
         self.vault_contents = VaultContents().load(vault_contents_dict)
         return self
 

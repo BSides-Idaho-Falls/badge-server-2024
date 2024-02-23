@@ -199,11 +199,13 @@ class HouseAccess:
             return
         robbers_house: House = House(house_id=robbers_house_id)
         dollars: int = house.vault_contents.dollars
+
         robbers_house.vault_contents.increase_dollars(dollars)
         house.vault_contents.dollars = 0
 
-        house.save()
-        robbers_house.save()
+        if dollars > 0:
+            house.save()
+            robbers_house.save()
 
         return {"success": True, "robbed": True, "contents": {"dollars": dollars}}
 
@@ -217,9 +219,12 @@ class HouseAccess:
             material = Air()
         if not material.passable:
             return None
+        print(f"{material.material_type.value}")
         if material.material_type.value != "Air":
-            if material.material_type == "Vault":
-                self.rob_vault()
+            print(f"{material.material_type.value} != Air")
+            if material.material_type.value == "Vault":
+                print(f"{self.player_id} is robbing vault of {self.house_id}")
+                return self.rob_vault()
             return None  # material.passable is bugged, figure out why?
         print(f"{self.player_id} is moving to {x},{y} in house {self.house_id}")
         self.player_location = [x, y]

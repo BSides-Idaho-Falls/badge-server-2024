@@ -3,6 +3,7 @@ import uuid
 
 from flask import Blueprint, request
 
+from api.house_base import House
 from api.house_tracking import HouseAccess
 from utils import validation
 from utils.api_decorators import json_data
@@ -149,4 +150,19 @@ def get_some_bytes():
     bites = bytes(byte_list)
     response_data = {'bytes': bites.decode('latin-1'), 'additional_data': "x"}
     return response_data
+
+
+@mod.route("/api/test/compare/<house_id1>/<house_id2>")
+def compare_houses(house_id1, house_id2):
+    house1: House = House(house_id=house_id1).load()
+    house2: House = House(house_id=house_id2).load()
+
+    if not house1 or not house2:
+        return {"success": False, "reason": "One or more houses doesn't exist"}
+
+    return {
+        "success": True,
+        "house1": house1.vault_contents.dollars,
+        "house2": house2.vault_contents.dollars
+    }
 
