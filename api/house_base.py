@@ -237,7 +237,6 @@ class House:
             setattr(self, k, v)
         self.construction = c2
         vault_contents_dict = item.get("vault_contents", {})
-        print(f"Loading vault contents: {json.dumps(vault_contents_dict)}")
         self.vault_contents = VaultContents().load(vault_contents_dict)
         return self
 
