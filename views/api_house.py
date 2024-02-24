@@ -24,6 +24,18 @@ def get_house(player_id, player):
     return {"success": True, "house": house_dict}
 
 
+@mod.route('/api/house/<player_id>/vault', methods=["GET"])
+@has_house
+def get_vault(player_id, player):
+    house: House = House(house_id=player.house_id).load()
+    vault: dict = house.vault_contents.as_dict()
+    condensed: dict = {
+        "dollars": vault["dollars"],
+        "walls": vault["materials"]["Wooden_Wall"]
+    }
+    return {"success": True, "vault": condensed}
+
+
 @mod.route("/api/house/<player_id>", methods=["POST"])
 @player_valid
 def create_house(player_id, player):

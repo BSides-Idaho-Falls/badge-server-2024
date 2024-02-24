@@ -65,7 +65,7 @@ class HouseAccess:
         compressed_render = self.get_compressed_render(remote_x, remote_y, player_local_location)
         explicit_render = self.get_explicit_render(remote_x, remote_y, player_local_location)
 
-        wood_walls: int = self.house.vault_contents.materials.get(["Wooden_Wall"], 0)
+        wood_walls: int = self.house.vault_contents.materials.get("Wooden_Wall", 0)
 
         c_size = len(json.dumps(compressed_render))
         e_size = len(json.dumps(explicit_render))
