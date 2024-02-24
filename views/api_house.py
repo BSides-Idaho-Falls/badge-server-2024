@@ -96,12 +96,21 @@ def move_vault(player_id, player):
     if not access.is_in_house():
         return {"success": False, "reason": "You must be in your own house"}, 400
     if access.house_id != player.house_id:
-        return {"success": False, "reason": "You can't be in someone else's house while editing."}
+        return {"success": False, "reason": "You can't be in someone else's house while editing."}, 400
 
     success: bool = house.move_vault(data["x"], data["y"])  # Solution check is included
     solution = pathfinder.get_maze_solution(house.get_construction_as_dict())
     house.save()
-    return {"success": success, "lucky_numbers": solution_to_lucky_numbers(solution)}, 200 if success else 400
+
+    surroundings = access.render_surroundings(compressed_view=True)
+    response = {
+        "success": success,
+        "lucky_numbers": solution_to_lucky_numbers(solution),
+        "house_id": house.house_id,
+        "player_location": access.player_location
+    }
+
+    return {**response, **surroundings}, 200 if success else 400
 
 
 @mod.route("/api/edit-house/<player_id>/build", methods=["POST"])

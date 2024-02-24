@@ -193,6 +193,7 @@ class HouseAccess:
     def rob_vault(self):
         if self.player_owns_house():
             return  # Can't rob your own house!
+        print(f"{self.player_id} is robbing vault of {self.house_id}")
         house: House = House(self.house_id).load()
         robbers_house_id = self.get_players_house_id()
         if not robbers_house_id:
@@ -218,11 +219,8 @@ class HouseAccess:
             material = Air()
         if not material.passable:
             return None
-        print(f"{material.material_type.value}")
         if material.material_type.value != "Air":
-            print(f"{material.material_type.value} != Air")
             if material.material_type.value == "Vault":
-                print(f"{self.player_id} is robbing vault of {self.house_id}")
                 return self.rob_vault()
             return None  # material.passable is bugged, figure out why?
         print(f"{self.player_id} is moving to {x},{y} in house {self.house_id}")
