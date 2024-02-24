@@ -102,14 +102,14 @@ def move_vault(player_id, player):
     solution = pathfinder.get_maze_solution(house.get_construction_as_dict())
     house.save()
 
-    surroundings = access.render_surroundings(compressed_view=True)
     response = {
         "success": success,
         "lucky_numbers": solution_to_lucky_numbers(solution),
         "house_id": house.house_id,
         "player_location": access.player_location
     }
-
+    access.load()  # Refresh house data
+    surroundings = access.render_surroundings(compressed_view=True)
     return {**response, **surroundings}, 200 if success else 400
 
 
@@ -164,13 +164,14 @@ def build_square(player_id, player, data):
             "success": False, "reason": "Cannot build over the vault. Please move the vault first."
         }
 
-    surroundings = access.render_surroundings(compressed_view=True)
     response_data = {
         "house_id": house.house_id,
         "player_location": access.player_location,
     }
 
     edit, code = house_editor(house, data)
+    access.load()  # Refresh house data
+    surroundings = access.render_surroundings(compressed_view=True)
     return {**surroundings, **response_data, **edit}, code
 
 
@@ -212,13 +213,14 @@ def clear_square(player_id, player, data):
 
     house: House = House(house_id=player.house_id).load()
 
-    surroundings = access.render_surroundings(compressed_view=True)
     response_data = {
         "house_id": house.house_id,
         "player_location": access.player_location,
     }
 
     edit, code = house_editor(house, data)
+    access.load()  # Refresh house data
+    surroundings = access.render_surroundings(compressed_view=True)
     return {**surroundings, **response_data, ** edit}, code
 
 
