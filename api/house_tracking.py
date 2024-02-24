@@ -197,15 +197,14 @@ class HouseAccess:
         robbers_house_id = self.get_players_house_id()
         if not robbers_house_id:
             return
-        robbers_house: House = House(house_id=robbers_house_id)
+        robbers_house: House = House(house_id=robbers_house_id).load()
         dollars: int = house.vault_contents.dollars
 
         robbers_house.vault_contents.increase_dollars(dollars)
         house.vault_contents.dollars = 0
 
-        if dollars > 0:
-            house.save()
-            robbers_house.save()
+        house.save()
+        robbers_house.save()
 
         return {"success": True, "robbed": True, "contents": {"dollars": dollars}}
 

@@ -41,8 +41,9 @@ class Player:
             return None
         for k, v in player_data.items():
             if k == "last_robbery_attempt":
-                setattr(self, k, datetime.datetime.fromisoformat(v))
-                continue
+                if v is not None:
+                    setattr(self, k, datetime.datetime.fromisoformat(v))
+                    continue
             setattr(self, k, v)
         return self
 
