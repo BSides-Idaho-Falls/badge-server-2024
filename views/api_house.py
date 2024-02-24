@@ -164,7 +164,14 @@ def build_square(player_id, player, data):
             "success": False, "reason": "Cannot build over the vault. Please move the vault first."
         }
 
-    return house_editor(house, data)
+    surroundings = access.render_surroundings(compressed_view=True)
+    response_data = {
+        "house_id": house.house_id,
+        "player_location": access.player_location,
+    }
+
+    edit, code = house_editor(house, data)
+    return {**surroundings, **response_data, **edit}, code
 
 
 @mod.route("/api/edit-house/<player_id>/clear", methods=["DELETE"])
@@ -205,7 +212,14 @@ def clear_square(player_id, player, data):
 
     house: House = House(house_id=player.house_id).load()
 
-    return house_editor(house, data)
+    surroundings = access.render_surroundings(compressed_view=True)
+    response_data = {
+        "house_id": house.house_id,
+        "player_location": access.player_location,
+    }
+
+    edit, code = house_editor(house, data)
+    return {**surroundings, **response_data, ** edit}, code
 
 
 def house_editor(house: House, data: dict) -> Tuple[dict, int]:
