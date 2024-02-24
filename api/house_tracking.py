@@ -64,18 +64,24 @@ class HouseAccess:
 
         compressed_render = self.get_compressed_render(remote_x, remote_y, player_local_location)
         explicit_render = self.get_explicit_render(remote_x, remote_y, player_local_location)
+
+        wood_walls: int = self.house.vault_contents.materials.get(["Wooden_Wall"], 0)
+
         c_size = len(json.dumps(compressed_render))
         e_size = len(json.dumps(explicit_render))
         print(f"{c_size} - {e_size}")
+        resources = {
+            "wood_walls": wood_walls
+        }
         if compressed_view:
             if c_size > e_size:
                 print(
                     f"Explicit render is smaller than the compressed! "
                     f"Returning this instead. {c_size} > {e_size}"
                 )
-                return explicit_render
-            return compressed_render
-        return explicit_render
+                return {**explicit_render, **resources}
+            return {**compressed_render, **resources}
+        return {**explicit_render, **resources}
 
     def get_explicit_render(self, remote_x, remote_y, player_local_location):
         local_x: int = 0
