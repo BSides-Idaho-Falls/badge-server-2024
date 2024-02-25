@@ -87,7 +87,7 @@ def rob_house(player_id, player):
             "success": False,
             "reason": "You are trying to rob houses too often!",
             "seconds": 45 - rob_timeout
-        }
+        }, 429
     house_to_rob = robbery.find_unoccupied_house(exclusions=[player.house_id])
     if not house_to_rob:
         return {"success": False, "reason": "There are no available houses to rob!"}
