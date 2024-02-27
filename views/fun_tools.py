@@ -3,6 +3,8 @@ import uuid
 
 from flask import Blueprint, request
 
+from api.house_base import House
+from api.house_tracking import HouseAccess
 from utils import validation
 from utils.api_decorators import json_data
 from utils.db_config import db
@@ -31,7 +33,7 @@ def reset_registration():
         return {"success": False}, 401
     db["registration"].delete_many({})
     default_item: dict = {
-        "_id": str(uuid.uuid4()),
+        "_id": validation.generate_luhn(16),
         "mac": "00:00:00:00:00:00",
         "notes": "Default Registration Value"
     }
@@ -75,6 +77,31 @@ def disable_registration():
     return {"success": True}
 
 
+@mod.route("/api/trigger-evictions", methods=["POST"])
+def trigger_evictions():
+    admin_token = request.headers.get("X-API-Token", "")
+    valid_token = os.environ.get("ADMINISTRATION_KEY", "default_token_hack_me_boi")
+    if admin_token != valid_token:
+        return {"success": False}, 401
+    evictions: int = 0
+    for item in db["access"].find({}):
+        if HouseAccess.visit_too_long(item):
+            HouseAccess.evict(item["player_id"])
+            evictions += 1
+    return {"success": True, "evictions": evictions}
+
+
+@mod.route("/api/trigger-evictions/all", methods=["POST"])
+def trigger_all_evictions():
+    admin_token = request.headers.get("X-API-Token", "")
+    valid_token = os.environ.get("ADMINISTRATION_KEY", "default_token_hack_me_boi")
+    if admin_token != valid_token:
+        return {"success": False}, 401
+    items = db["access"].find({}, ["_id"])
+    evictions: int = len([x for x in items])
+    return {"success": True, "evictions": evictions}
+
+
 @mod.route("/api/self-register", methods=["POST"])
 @json_data
 def self_registration(data):
@@ -115,4 +142,27 @@ def self_registration(data):
         }
     db["registration"].insert_one(data)
     return {"success": True, "message": data}
+
+
+@mod.route("/api/test/bytes")
+def get_some_bytes():
+    byte_list = b'\x05' * 16
+    bites = bytes(byte_list)
+    response_data = {'bytes': bites.decode('latin-1'), 'additional_data': "x"}
+    return response_data
+
+
+@mod.route("/api/test/compare/<house_id1>/<house_id2>")
+def compare_houses(house_id1, house_id2):
+    house1: House = House(house_id=house_id1).load()
+    house2: House = House(house_id=house_id2).load()
+
+    if not house1 or not house2:
+        return {"success": False, "reason": "One or more houses doesn't exist"}
+
+    return {
+        "success": True,
+        "house1": house1.vault_contents.dollars,
+        "house2": house2.vault_contents.dollars
+    }
 

@@ -4,6 +4,7 @@ import uuid
 
 from flask import Flask
 
+from utils import startup
 from utils.db_config import db
 from views import assets, api_house, api_player, renders, fun_tools, api_shop, api_game
 
@@ -43,6 +44,9 @@ for registration in registers:
 @app.errorhandler(404)
 def page_not_found(e):
     return "404", 404
+
+
+startup.house_evictions()  # Clean up users who have been in a house too long.
 
 
 if __name__ == '__main__':

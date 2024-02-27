@@ -1,4 +1,5 @@
 import json
+import random
 import uuid
 from typing import Optional, Union, List
 
@@ -25,7 +26,7 @@ class VaultContents:
         self.materials["Wooden_Wall"] = 20  # Start with 20 walls
 
     def load(self, json_value):
-        self.dollars = json_value.get("dollars", 2000)  # Starting money if DB value is null
+        self.dollars = json_value["dollars"] if "dollars" in json_value else 2000  # Starting money if DB value is null
         for item in MaterialType:
             if item in [MaterialType.VAULT, MaterialType.AIR]:
                 continue
@@ -66,6 +67,12 @@ class VaultContents:
             return True
         self.set_material_count(material_type, self.materials[material_type] + increment_by)
         return True
+
+    def increase_dollars(self, amount=1):
+        self.dollars += amount
+
+    def decrease_dollars(self, amount=1):
+        self.dollars -= amount
 
     def as_dict(self):
         contents: dict = self.__dict__
@@ -134,7 +141,7 @@ class House:
         self.construction: list = [
             {
                 "material_type": MaterialType.VAULT,
-                "location": [30, 15]
+                "location": [random.randint(25, 30), random.randint(10, 20)]
             }
         ]
         for x in range(2, 7):

@@ -3,6 +3,7 @@ from typing import Tuple
 from flask import Blueprint, request
 
 from api.house_base import House, VaultContents
+from api.house_tracking import HouseAccess
 from api.material_base import Material, MaterialType
 from api.materials import Air
 from api.player_base import Player
@@ -21,6 +22,18 @@ def get_house(player_id, player):
     house_dict = house.as_dict()
     del house_dict["_id"]
     return {"success": True, "house": house_dict}
+
+
+@mod.route('/api/house/<player_id>/vault', methods=["GET"])
+@has_house
+def get_vault(player_id, player):
+    house: House = House(house_id=player.house_id).load()
+    vault: dict = house.vault_contents.as_dict()
+    condensed: dict = {
+        "dollars": vault["dollars"],
+        "walls": vault["materials"]["Wooden_Wall"]
+    }
+    return {"success": True, "vault": condensed}
 
 
 @mod.route("/api/house/<player_id>", methods=["POST"])
@@ -86,10 +99,30 @@ def move_vault(player_id, player):
             "reason": "Malformed Request. Must include 'x' and 'y' coordinates"
         }, 400
 
+    access: HouseAccess = HouseAccess(
+        player_id=player_id,
+        house_id=player.house_id
+    ).load()
+    if not access:
+        return {"success": False, "reason": "House does not exist!"}, 404
+    if not access.is_in_house():
+        return {"success": False, "reason": "You must be in your own house"}, 400
+    if access.house_id != player.house_id:
+        return {"success": False, "reason": "You can't be in someone else's house while editing."}, 400
+
     success: bool = house.move_vault(data["x"], data["y"])  # Solution check is included
     solution = pathfinder.get_maze_solution(house.get_construction_as_dict())
     house.save()
-    return {"success": success, "lucky_numbers": solution_to_lucky_numbers(solution)}, 200 if success else 400
+
+    response = {
+        "success": success,
+        "lucky_numbers": solution_to_lucky_numbers(solution),
+        "house_id": house.house_id,
+        "player_location": access.player_location
+    }
+    access.load()  # Refresh house data
+    surroundings = access.render_surroundings(compressed_view=True)
+    return {**response, **surroundings}, 200 if success else 400
 
 
 @mod.route("/api/edit-house/<player_id>/build", methods=["POST"])
@@ -120,6 +153,17 @@ def build_square(player_id, player, data):
 
     x, y = data["x"], data["y"]
 
+    access: HouseAccess = HouseAccess(
+        player_id=player_id,
+        house_id=player.house_id
+    ).load()
+    if not access:
+        return {"success": False, "reason": "House does not exist!"}, 404
+    if not access.is_in_house():
+        return {"success": False, "reason": "You must be in your own house"}, 400
+    if access.house_id != player.house_id:
+        return {"success": False, "reason": "You can't be in someone else's house while editing."}
+
     house: House = House(house_id=player.house_id).load()
 
     if not House.in_bounds(x, y):
@@ -132,7 +176,15 @@ def build_square(player_id, player, data):
             "success": False, "reason": "Cannot build over the vault. Please move the vault first."
         }
 
-    return house_editor(house, data)
+    response_data = {
+        "house_id": house.house_id,
+        "player_location": access.player_location,
+    }
+
+    edit, code = house_editor(house, data)
+    access.load()  # Refresh house data
+    surroundings = access.render_surroundings(compressed_view=True)
+    return {**surroundings, **response_data, **edit}, code
 
 
 @mod.route("/api/edit-house/<player_id>/clear", methods=["DELETE"])
@@ -160,9 +212,28 @@ def clear_square(player_id, player, data):
     }):
         return {"success": False, "reason": "Malformed Data"}, 400
 
+    access: HouseAccess = HouseAccess(
+        player_id=player_id,
+        house_id=player.house_id
+    ).load()
+    if not access:
+        return {"success": False, "reason": "House does not exist!"}, 404
+    if not access.is_in_house():
+        return {"success": False, "reason": "You must be in your own house"}, 400
+    if access.house_id != player.house_id:
+        return {"success": False, "reason": "You can't be in someone else's house while editing."}
+
     house: House = House(house_id=player.house_id).load()
 
-    return house_editor(house, data)
+    response_data = {
+        "house_id": house.house_id,
+        "player_location": access.player_location,
+    }
+
+    edit, code = house_editor(house, data)
+    access.load()  # Refresh house data
+    surroundings = access.render_surroundings(compressed_view=True)
+    return {**surroundings, **response_data, ** edit}, code
 
 
 def house_editor(house: House, data: dict) -> Tuple[dict, int]:

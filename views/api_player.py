@@ -1,6 +1,5 @@
 from flask import Blueprint
 
-from api.player_base import Player
 from utils.api_decorators import player_valid, registration
 
 mod = Blueprint('api_player', __name__)

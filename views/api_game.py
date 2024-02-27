@@ -1,6 +1,7 @@
+import datetime
 from typing import Optional
 
-from flask import Blueprint
+from flask import Blueprint, request
 
 from api.house_tracking import HouseAccess
 from utils import robbery
@@ -48,7 +49,9 @@ def enter_house(player_id, player):
         return {"success": False, "reason": "You are already in the house!"}, 400
     if not access.can_enter_house():
         return {"success": False, "reason": "Can't enter house at this time. Is someone there?"}, 401
-    response = access.enter_house()
+    compress_header = request.headers.get("c")
+    compressed_view = compress_header and compress_header == "y"
+    response = access.enter_house(compressed_view=compressed_view)
     if not response:
         return {"success": False, "reason": "Unknown error occurred."}, 500
     response["success"] = True
@@ -78,6 +81,13 @@ def leave_house(player_id, player):
 @mod.route("/api/game/<player_id>/rob_house", methods=["POST"])
 @has_house
 def rob_house(player_id, player):
+    rob_timeout: int = player.can_rob_house()
+    if rob_timeout > 0:
+        return {
+            "success": False,
+            "reason": "You are trying to rob houses too often!",
+            "seconds": 45 - rob_timeout
+        }, 429
     house_to_rob = robbery.find_unoccupied_house(exclusions=[player.house_id])
     if not house_to_rob:
         return {"success": False, "reason": "There are no available houses to rob!"}
@@ -91,8 +101,12 @@ def rob_house(player_id, player):
         return {"success": False, "reason": "You are already in the house!"}, 400
     if not access.can_enter_house():
         return {"success": False, "reason": "Can't enter house at this time. Is someone there?"}, 401
-    response = access.enter_house()
+    compress_header = request.headers.get("c")
+    compressed_view = compress_header and compress_header == "y"
+    response = access.enter_house(compressed_view=compressed_view)
     if not response:
         return {"success": False, "reason": "Unknown error occurred."}, 500
     response["success"] = True
+    player.last_robbery_attempt = datetime.datetime.now()
+    player.save()
     return response
