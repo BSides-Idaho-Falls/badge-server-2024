@@ -46,8 +46,10 @@ def page_not_found(e):
     return "404", 404
 
 
+startup.house_evictions()  # Clean up users who have been in a house too long.
+
+
 if __name__ == '__main__':
-    startup.house_evictions()  # Clean up users who have been in a house too long.
     host = "0.0.0.0"
     debug_mode = os.environ.get("DEBUG_MODE", "false").lower() == "true"
     app.run(debug=debug_mode, port=8080, host=host)
