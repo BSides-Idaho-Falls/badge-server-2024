@@ -3,6 +3,7 @@ from flask import Blueprint
 from api.house_base import House, VaultContents
 from api.material_base import MaterialType, Material
 from api.materials import material_from_type
+from utils import metrics
 from utils.api_decorators import has_house, json_data
 from utils.validation import dict_types_valid
 
@@ -61,6 +62,8 @@ def purchase_item(player_id, player, data):
 
     house.save()
 
+    metrics.metric_tracker.set_player_money(player_id, vault_contents.dollars).push()
+
     return {"success": True, "vault": vault_contents.as_dict()}
 
 
@@ -114,5 +117,7 @@ def sell_item(player_id, player, data):
     vault_contents.dollars = vault_contents.dollars + profits
 
     house.save()
+
+    metrics.metric_tracker.set_player_money(player_id, vault_contents.dollars).push()
 
     return {"success": True, "vault": vault_contents.as_dict()}

@@ -116,6 +116,12 @@ class House:
             return False  # Can't overwrite the player entry point
         return True
 
+    def get_house_owner(self):
+        player = db["players"].find_one({"house_id": self.house_id}, ["player_id"])
+        if not player:
+            return None
+        return player["player_id"]
+
     def move_vault(self, x: int, y: int) -> bool:
         if not House.in_bounds(x, y):
             return False
