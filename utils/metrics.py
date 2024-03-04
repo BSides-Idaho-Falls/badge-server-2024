@@ -3,7 +3,7 @@ import os
 import uuid
 from typing import Optional, Union
 
-from prometheus_client import CollectorRegistry, push_to_gateway, Counter, Gauge
+from prometheus_client import push_to_gateway, Counter, Gauge
 
 from utils import metric_utils
 from utils.db_config import db
@@ -13,7 +13,7 @@ class MetricTracker:
 
     def __init__(self):
         self.push_registry_host = os.environ.get("PUSH_REGISTRY")
-        self.registry = CollectorRegistry()
+        #self.registry = CollectorRegistry()
 
         # Player_id and IP not included as it would be an unbounded label
         # and would cause storage to rise drastically with the expected amount
@@ -27,8 +27,7 @@ class MetricTracker:
                 "py_endpoint",
                 "status",
                 "success"
-            ],
-            registry=self.registry
+            ]
         )
 
         self.robberies_counter = Counter(
@@ -36,8 +35,7 @@ class MetricTracker:
             "Count of robberies",
             labelnames=[
                 "successful"
-            ],
-            registry=self.registry
+            ]
         )
 
         self.robberies_gauge = Gauge(
@@ -45,8 +43,7 @@ class MetricTracker:
             "Number of robbery attempts",
             labelnames=[
                 "successful"
-            ],
-            registry=self.registry
+            ]
         )
 
         self.players = Gauge(
@@ -54,8 +51,7 @@ class MetricTracker:
             "Number of players",
             labelnames=[
                 "active"
-            ],
-            registry=self.registry
+            ]
         )
 
         self.houses = Gauge(
@@ -63,14 +59,12 @@ class MetricTracker:
             "Number of houses",
             labelnames=[
                 "abandoned"
-            ],
-            registry=self.registry
+            ]
         )
 
         self.registration = Gauge(
             "apiserver_registration_tokens",
-            "Number of registration tokens",
-            registry=self.registry
+            "Number of registration tokens"
         )
 
         self.houses_occupied = Gauge(
@@ -78,12 +72,8 @@ class MetricTracker:
             "Number of players inside houses",
             labelnames=[
                 "houseowner"
-            ],
-            registry=self.registry
+            ]
         )
-
-    def get_registry(self):
-        return self.registry
 
     def increment_robbery_attempt(self, successful: Union[bool, str]):
         self.robberies_gauge.labels(successful=str(successful)).inc(1)
@@ -245,7 +235,7 @@ def refresh_metrics():
     # Count houses and abandoned houses
     active_houses, abandoned_houses = metric_utils.get_house_counts()
     metric_tracker.set_houses(active_houses, False)
-    metric_tracker.set_players(abandoned_houses, True)
+    metric_tracker.set_houses(abandoned_houses, True)
 
     # Count registration tokens
     metric_tracker.set_registration_tokens(metric_utils.get_registration_counts())

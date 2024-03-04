@@ -8,8 +8,10 @@ services:
       volumes:
         - ./templates:/root/templates
         - ./static:/root/static
+        - ./metrics_configs/registry:/root/prometheus_registry
       environment:
         - MONGO_IP=mongo.badger
+        - PROMETHEUS_MULTIPROC_DIR=/root/prometheus_registry
       ports:
         - 8080:8080
       networks:

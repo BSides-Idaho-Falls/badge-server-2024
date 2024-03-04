@@ -4,7 +4,7 @@ import os
 import uuid
 
 from flask import Flask, request
-from prometheus_client import generate_latest
+from prometheus_client import generate_latest, REGISTRY
 
 from utils import startup, metrics
 from utils.db_config import db
@@ -28,6 +28,8 @@ def get_secret_key():
 
 app = Flask(__name__)
 app.secret_key = get_secret_key()
+if "PROMETHEUS_MULTIPROC_DIR" not in os.environ:
+    os.environ["PROMETHEUS_MULTIPROC_DIR"] = "./metrics_configs/registry"
 
 registers = [
     assets.mod,
@@ -55,8 +57,9 @@ def server_error(e):
 
 @app.route('/metrics')
 def serve_metrics():
+    # multiprocess.MultiProcessCollector(CollectorRegistry())
     metrics.refresh_metrics()
-    return generate_latest(metrics.metric_tracker.get_registry())
+    return generate_latest(REGISTRY)
 
 
 @app.after_request
