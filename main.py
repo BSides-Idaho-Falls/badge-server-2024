@@ -1,10 +1,11 @@
+import json
 import logging
 import os
 import uuid
 
-from flask import Flask
+from flask import Flask, request
 
-from utils import startup
+from utils import startup, metrics
 from utils.db_config import db
 from views import assets, api_house, api_player, renders, fun_tools, api_shop, api_game
 
@@ -46,8 +47,44 @@ def page_not_found(e):
     return "404", 404
 
 
-startup.house_evictions()  # Clean up users who have been in a house too long.
+@app.errorhandler(500)
+def server_error(e):
+    return "500", 500
 
+
+@app.after_request
+def after_request(response):
+    status_code = str(response.status_code)
+    response_body = response.get_data(as_text=True)
+    response_json = {}
+    player_id = "N/A"
+    try:
+        response_json = json.loads(response_body)
+        if "player_id" in response_json:
+            player_id = response_json["player_id"]
+    except Exception:
+        pass
+    success = str(response_json.get("success", "N/A"))
+    py_endpoint = request.endpoint
+    request_method = request.method
+    requester_ip = request.remote_addr
+    http_path = request.url_rule.rule if request.url_rule else None
+
+    metrics.metric_tracker.increment_http_request(
+        method=request_method,
+        endpoint=http_path,
+        py_endpoint=py_endpoint,
+        status=status_code,
+        success=success,
+        ip=requester_ip,
+        player_id=player_id
+    ).push()
+
+    return response
+
+
+startup.house_evictions()  # Clean up users who have been in a house too long.
+metrics.metric_tracker = metrics.MetricTracker()
 
 if __name__ == '__main__':
     host = "0.0.0.0"
