@@ -40,7 +40,7 @@ def has_house(func):
         house: House = House(house_id=player.house_id).load()
         if not house:
             return {"success": False, "reason": "House not found."}, 404
-
+        Player.set_last_active_now(player_id)
         return {"success": True, "player": player}, 200
 
     def decorator(*args, **kwargs):
@@ -83,7 +83,7 @@ def player_valid(func):
             return {"success": False, "reason": "Player doesn't exist"}, 404
         if player.token != api_token:
             return {"success": False, "reason": "Unauthorized"}, 401
-
+        Player.set_last_active_now(player_id)
         return {"success": True, "player": player}, 200
 
     def decorator(*args, **kwargs):

@@ -212,6 +212,7 @@ class HouseAccess:
 
         house.save()
         robbers_house.save()
+        metrics.metric_tracker.increment_robbery_attempt(True)
 
         return {"success": True, "robbed": True, "contents": {"dollars": dollars}}
 

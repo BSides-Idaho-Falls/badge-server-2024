@@ -55,7 +55,7 @@ def server_error(e):
 
 @app.route('/metrics')
 def serve_metrics():
-
+    metrics.refresh_metrics()
     return generate_latest(metrics.metric_tracker.get_registry())
 
 

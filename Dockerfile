@@ -7,4 +7,4 @@ COPY . /root
 RUN pip3 install --upgrade pip
 RUN pip3 install -r requirements.txt
 
-CMD ["gunicorn", "--bind", "0.0.0.0:8080", "main:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8080", "main:app", "--workers", "8", "--timeout", "4"]
