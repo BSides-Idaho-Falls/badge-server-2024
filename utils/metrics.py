@@ -3,7 +3,7 @@ import os
 import uuid
 from typing import Optional
 
-from prometheus_client import CollectorRegistry, Gauge, push_to_gateway, Counter
+from prometheus_client import CollectorRegistry, push_to_gateway, Counter
 
 from utils.db_config import db
 
@@ -11,14 +11,14 @@ from utils.db_config import db
 class MetricTracker:
 
     def __init__(self):
-        self.push_registry_host = os.environ.get("PUSH_REGISTRY", "localhost:9091")
+        self.push_registry_host = os.environ.get("PUSH_REGISTRY")
         self.registry = CollectorRegistry()
 
         # Player_id and IP not included as it would be an unbounded label
         # and would cause storage to rise drastically with the expected amount
         # of HTTP requests
         self.http_request_counter = Counter(
-            'http_requests_total',
+            'apiserver_http_requests_total',
             'HTTP Request Counter',
             labelnames=[
                 "method",
@@ -30,37 +30,8 @@ class MetricTracker:
             registry=self.registry
         )
 
-        # Although player_id is unbounded, we don't expect a massive amount of changes.
-        # This is generally *NOT* a good idea but hey. Let's stress test prometheus.
-        # (Still not doing this with the http requests metrics)
-        self.money_gauge = Gauge(
-            "badgeserver_player_dollars",
-            "How much money a player has",
-            labelnames=[
-                "player_id"
-            ],
-            registry=self.registry
-        )
-
-    def set_player_money(self, player_id: str, money: int):
-        now = datetime.datetime.now().isoformat()
-        self.money_gauge.labels(
-            player_id=player_id
-        ).set(money)
-        db_entry = {
-            "_id": str(uuid.uuid4()),
-            "timestamp": now,
-            "metric": "badgeserver_player_dollars",
-            "metric_type": "gauge",
-            "labels": {
-                "player_id": player_id
-            },
-            "value": {
-                "set": money
-            }
-        }
-        db["metrics"].insert_one(db_entry)
-        return self
+    def get_registry(self):
+        return self.registry
 
     def increment_http_request(self, method, endpoint, py_endpoint, status, success, ip=None, player_id=None):
         if not ip:
@@ -78,7 +49,7 @@ class MetricTracker:
         db_entry = {
             "_id": str(uuid.uuid4()),
             "timestamp": now,
-            "metric": "http_requests_total",
+            "metric": "apiserver_http_requests_total",
             "metric_type": "counter",
             "labels": {
                 "method": method,
@@ -96,6 +67,15 @@ class MetricTracker:
         return self  # For syntax such as increment_http_request().push()
 
     def push(self):
+        """
+        Not necessary for /metrics, but necessary if you have a prometheus
+        push gateway.
+
+        Warning: not all metrics will get published to the push registry unless
+        /metrics is called on this server.
+        """
+        if not self.push_registry_host:
+            return
         try:
             push_to_gateway(self.push_registry_host, job='badge_server', registry=self.registry)
         except Exception:

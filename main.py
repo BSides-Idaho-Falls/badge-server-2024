@@ -4,6 +4,7 @@ import os
 import uuid
 
 from flask import Flask, request
+from prometheus_client import generate_latest
 
 from utils import startup, metrics
 from utils.db_config import db
@@ -52,11 +53,17 @@ def server_error(e):
     return "500", 500
 
 
+@app.route('/metrics')
+def serve_metrics():
+
+    return generate_latest(metrics.metric_tracker.get_registry())
+
+
 @app.after_request
 def after_request(response):
     status_code = str(response.status_code)
     response_body = response.get_data(as_text=True)
-    response_json = {}
+    response_json: dict = {}
     player_id = "N/A"
     try:
         response_json = json.loads(response_body)
@@ -64,7 +71,10 @@ def after_request(response):
             player_id = response_json["player_id"]
     except Exception:
         pass
-    success = str(response_json.get("success", "N/A"))
+    try:
+        success = str(response_json.get("success", "N/A"))
+    except Exception:
+        success = "N/A"
     py_endpoint = request.endpoint
     request_method = request.method
     requester_ip = request.remote_addr

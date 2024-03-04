@@ -62,8 +62,6 @@ def purchase_item(player_id, player, data):
 
     house.save()
 
-    metrics.metric_tracker.set_player_money(player_id, vault_contents.dollars).push()
-
     return {"success": True, "vault": vault_contents.as_dict()}
 
 
@@ -117,7 +115,5 @@ def sell_item(player_id, player, data):
     vault_contents.dollars = vault_contents.dollars + profits
 
     house.save()
-
-    metrics.metric_tracker.set_player_money(player_id, vault_contents.dollars).push()
 
     return {"success": True, "vault": vault_contents.as_dict()}

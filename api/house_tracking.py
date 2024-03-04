@@ -213,11 +213,6 @@ class HouseAccess:
         house.save()
         robbers_house.save()
 
-        metrics.metric_tracker.set_player_money(
-            self.player_id, robbers_house.vault_contents.dollars
-        ).push()
-        metrics.metric_tracker.set_player_money(house.get_house_owner(), 0).push()
-
         return {"success": True, "robbed": True, "contents": {"dollars": dollars}}
 
     def _teleport_to(self, x: int, y: int, compressed_view=False):
