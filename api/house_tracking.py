@@ -69,7 +69,6 @@ class HouseAccess:
 
         c_size = len(json.dumps(compressed_render))
         e_size = len(json.dumps(explicit_render))
-        print(f"{c_size} - {e_size}")
         resources = {
             "wood_walls": wood_walls
         }
