@@ -27,3 +27,11 @@ scrape_configs:
   - targets: ['web_2024.badger:8080']
     labels:
       service: 'api-server'
+#- job_name: push-gateway
+#  metrics_path: /metrics
+#  scheme: http
+#  honor_labels: true
+#  static_configs:
+#  - targets: ['pushgateway.badger:9091']
+#    labels:
+#      service: 'push-gateway'

@@ -3,7 +3,7 @@ import os
 import uuid
 from typing import Optional, Union
 
-from prometheus_client import push_to_gateway, Counter, Gauge
+from prometheus_client import push_to_gateway, Counter, Gauge, REGISTRY
 
 from utils import metric_utils
 from utils.db_config import db
@@ -13,6 +13,7 @@ class MetricTracker:
 
     def __init__(self):
         self.push_registry_host = os.environ.get("PUSH_REGISTRY")
+        print(f"Push registry host: {self.push_registry_host}")
         #self.registry = CollectorRegistry()
 
         # Player_id and IP not included as it would be an unbounded label
@@ -217,7 +218,7 @@ class MetricTracker:
         if not self.push_registry_host:
             return
         try:
-            push_to_gateway(self.push_registry_host, job='badge_server', registry=self.registry)
+            push_to_gateway(self.push_registry_host, job='badge_server', registry=REGISTRY)
         except Exception:
             print(f"Failed to push metrics to {self.push_registry_host}!")
 
@@ -229,20 +230,20 @@ def refresh_metrics():
 
     # Count active and inactive players
     active_player_count, inactive_player_count = metric_utils.get_player_counts()
-    metric_tracker.set_players(active_player_count, True)
-    metric_tracker.set_players(inactive_player_count, False)
+    metric_tracker.set_players(active_player_count, True).push()
+    metric_tracker.set_players(inactive_player_count, False).push()
 
     # Count houses and abandoned houses
     active_houses, abandoned_houses = metric_utils.get_house_counts()
-    metric_tracker.set_houses(active_houses, False)
-    metric_tracker.set_houses(abandoned_houses, True)
+    metric_tracker.set_houses(active_houses, False).push()
+    metric_tracker.set_houses(abandoned_houses, True).push()
 
     # Count registration tokens
-    metric_tracker.set_registration_tokens(metric_utils.get_registration_counts())
+    metric_tracker.set_registration_tokens(metric_utils.get_registration_counts()).push()
 
     # Count players in houses (active robberies)
     in_own_house, in_other_house = metric_utils.get_players_in_houses()
-    metric_tracker.set_house_occupied(in_own_house, True)
-    metric_tracker.set_house_occupied(in_other_house, False)
+    metric_tracker.set_house_occupied(in_own_house, True).push()
+    metric_tracker.set_house_occupied(in_other_house, False).push()
 
 

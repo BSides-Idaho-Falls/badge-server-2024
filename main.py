@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import uuid
+from threading import Thread
 
 from flask import Flask, request
 from prometheus_client import generate_latest, REGISTRY
@@ -57,7 +58,6 @@ def server_error(e):
 
 @app.route('/metrics')
 def serve_metrics():
-    # multiprocess.MultiProcessCollector(CollectorRegistry())
     metrics.refresh_metrics()
     return generate_latest(REGISTRY)
 
