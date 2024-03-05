@@ -99,7 +99,6 @@ def create_app():
 
 
 startup.house_evictions()  # Clean up users who have been in a house too long.
-# metrics.metric_tracker = metrics.MetricTracker()
 
 app = create_app()
 
