@@ -1,7 +1,7 @@
 import datetime
 import os
 import uuid
-from typing import Optional, Union
+from typing import Union
 
 from prometheus_client import push_to_gateway, Counter, Gauge, REGISTRY, CollectorRegistry
 
@@ -83,6 +83,10 @@ class MetricTracker:
             registry=self.registry
         )
 
+    def write_entry(self, entry):
+        """Allow writing metric entry to multiple locations such as DB & file."""
+        db["metrics"].insert_one(entry)
+
     def increment_robbery_attempt(self, successful: Union[bool, str]):
         self.robberies_gauge.labels(successful=str(successful)).inc(1)
         self.robberies_counter.labels(successful=str(successful)).inc(1)
@@ -99,10 +103,10 @@ class MetricTracker:
                 "inc": 1
             }
         }
-        db["metrics"].insert_one(db_entry)
+        self.write_entry(db_entry)
         db_entry["metric"] = "apiserver_robberies_total"
         db_entry["metric_type"] = "counter"
-        db["metrics"].insert_one(db_entry)
+        self.write_entry(db_entry)
         return self
 
     def set_players(self, number, active: Union[bool, str]):
@@ -122,7 +126,7 @@ class MetricTracker:
                 "set": number
             }
         }
-        db["metrics"].insert_one(db_entry)
+        self.write_entry(db_entry)
         return self
 
     def set_house_occupied(self, number, houseowner: Union[bool, str]):
@@ -142,7 +146,7 @@ class MetricTracker:
                 "set": number
             }
         }
-        db["metrics"].insert_one(db_entry)
+        self.write_entry(db_entry)
         return self
 
     def set_registration_tokens(self, number):
@@ -158,7 +162,7 @@ class MetricTracker:
                 "set": number
             }
         }
-        db["metrics"].insert_one(db_entry)
+        self.write_entry(db_entry)
         return self
 
     def set_houses(self, number, abandoned: Union[bool, str]):
@@ -178,7 +182,7 @@ class MetricTracker:
                 "set": number
             }
         }
-        db["metrics"].insert_one(db_entry)
+        self.write_entry(db_entry)
         return self
 
     def increment_http_request(self, method, endpoint, py_endpoint, status, success, ip=None, player_id=None):
@@ -211,8 +215,8 @@ class MetricTracker:
                 "inc": 1
             }
         }
-        db["metrics"].insert_one(db_entry)
-        return self  # For syntax such as increment_http_request().push()
+        self.write_entry(db_entry)
+        return self
 
     def push(self):
         """
