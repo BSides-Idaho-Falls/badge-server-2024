@@ -1,9 +1,11 @@
 import inspect
+import os
 
 from flask import request
 
 from api.house_base import House
 from api.player_base import Player
+from utils.configuration import get_config_value
 from utils.db_config import db
 
 
@@ -17,6 +19,31 @@ def log(message):
 
 def _signature_contains_value(signature, value):
     return any(param for param in signature.parameters.values() if param.name.lower() == value)
+
+
+def admin_required(func):
+    """
+    Validate that the request has a valid admin token
+    """
+    def validate_incoming_data():
+        admin_token = request.headers.get("X-API-Token", "")
+        valid_token = os.environ.get("ADMINISTRATION_KEY", "default_token_hack_me_boi")
+        return admin_token == valid_token
+
+    def decorator(*args, **kwargs):
+        _coarg = func.__code__.co_argcount
+        _arg = _coarg > 0
+        signature = inspect.signature(func)
+        _kwarg = any(
+            param for param in signature.parameters.values() if param.kind == param.VAR_KEYWORD
+        )
+        log(signature)
+        if not validate_incoming_data():
+            return {"success": False}, 401
+        return func(*args, **kwargs) if _arg or _kwarg else func()
+
+    decorator.__name__ = func.__name__
+    return decorator
 
 
 def has_house(func):
@@ -120,6 +147,15 @@ def registration(func):
         Returns **NEW** Player Object to be used in flask methods.
         """
 
+    def limits_exceeded(registration_token):
+        config_max_registrations: int = get_config_value(
+            "player.max_registrations", {"_id": "player.max_registrations", "value": 10}
+        ).get("value")
+        if config_max_registrations < 0:
+            return False  # -1 or lower = no limit
+        player_registrations = db["players"].count_documents({"token": registration_token})
+        return player_registrations >= config_max_registrations
+
     def validate_incoming_data(player_id):
         registration_token: str = request.headers.get("X-Register-Token")
         registration_item = db["registration"].find_one({
@@ -130,6 +166,8 @@ def registration(func):
         player: Player = Player(player_id).load()
         if player:
             return {"success": False, "reason": "Can't recreate player"}, 400
+        if limits_exceeded(registration_token):
+            return {"success": False, "reason": "You have registered too many players!"}
         player = Player(player_id=player_id, registered_by=registration_token)
         return {"success": True, "player": player}, 200
 

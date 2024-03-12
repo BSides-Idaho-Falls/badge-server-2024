@@ -5,8 +5,8 @@ from flask import Blueprint, request
 
 from api.house_base import House
 from api.house_tracking import HouseAccess
-from utils import validation
-from utils.api_decorators import json_data
+from utils import validation, configuration
+from utils.api_decorators import json_data, admin_required
 from utils.db_config import db
 from utils.validation import dict_types_valid
 
@@ -14,11 +14,8 @@ mod = Blueprint('api_fun_tools', __name__)
 
 
 @mod.route("/api/reset-game", methods=["DELETE"])
+@admin_required
 def reset_game():
-    reset_token = request.headers.get("X-API-Token", "")
-    valid_token = os.environ.get("ADMINISTRATION_KEY", "default_token_hack_me_boi")
-    if reset_token != valid_token:
-        return {"success": False}, 401
     db["players"].delete_many({})
     db["houses"].delete_many({})
     db["access"].delete_one({})
@@ -26,11 +23,8 @@ def reset_game():
 
 
 @mod.route("/api/clear-registration", methods=["DELETE"])
+@admin_required
 def reset_registration():
-    reset_token = request.headers.get("X-API-Token", "")
-    valid_token = os.environ.get("ADMINISTRATION_KEY", "default_token_hack_me_boi")
-    if reset_token != valid_token:
-        return {"success": False}, 401
     db["registration"].delete_many({})
     default_item: dict = {
         "_id": validation.generate_luhn(16),
@@ -42,11 +36,8 @@ def reset_registration():
 
 
 @mod.route("/api/enable-registration", methods=["POST"])
+@admin_required
 def enable_registration():
-    admin_token = request.headers.get("X-API-Token", "")
-    valid_token = os.environ.get("ADMINISTRATION_KEY", "default_token_hack_me_boi")
-    if admin_token != valid_token:
-        return {"success": False}, 401
     config_item = db["config"].find_one({"_id": "self-registration"})
     if not config_item:
         db["config"].insert_one({
@@ -60,11 +51,8 @@ def enable_registration():
 
 
 @mod.route("/api/disable-registration", methods=["POST"])
+@admin_required
 def disable_registration():
-    admin_token = request.headers.get("X-API-Token", "")
-    valid_token = os.environ.get("ADMINISTRATION_KEY", "default_token_hack_me_boi")
-    if admin_token != valid_token:
-        return {"success": False}, 401
     config_item = db["config"].find_one({"_id": "self-registration"})
     if not config_item:
         db["config"].insert_one({
@@ -78,11 +66,8 @@ def disable_registration():
 
 
 @mod.route("/api/trigger-evictions", methods=["POST"])
+@admin_required
 def trigger_evictions():
-    admin_token = request.headers.get("X-API-Token", "")
-    valid_token = os.environ.get("ADMINISTRATION_KEY", "default_token_hack_me_boi")
-    if admin_token != valid_token:
-        return {"success": False}, 401
     evictions: int = 0
     for item in db["access"].find({}):
         if HouseAccess.visit_too_long(item):
@@ -92,14 +77,35 @@ def trigger_evictions():
 
 
 @mod.route("/api/trigger-evictions/all", methods=["POST"])
+@admin_required
 def trigger_all_evictions():
-    admin_token = request.headers.get("X-API-Token", "")
-    valid_token = os.environ.get("ADMINISTRATION_KEY", "default_token_hack_me_boi")
-    if admin_token != valid_token:
-        return {"success": False}, 401
     items = db["access"].find({}, ["_id"])
     evictions: int = len([x for x in items])
     return {"success": True, "evictions": evictions}
+
+
+@mod.route("/api/config/<key>", methods=["POST"])
+@admin_required
+@json_data
+def set_config(key, data):
+    configuration.set_config_value(data, key)
+    return {"success": True}
+
+
+@mod.route("/api/config/<key>", methods=["GET"])
+@admin_required
+def get_config(key):
+    value = configuration.get_config_value(key)
+    if not value:
+        return {"success": False, "reason": "Key does not exist. Default value may be used."}
+    return value
+
+
+@mod.route("/api/config-dump")
+@admin_required
+def dump_config():
+    values = [item for item in db["config"].find({})]
+    return {"success": True, "count": len(values), "items": values}
 
 
 @mod.route("/api/self-register", methods=["POST"])

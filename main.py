@@ -8,7 +8,7 @@ from prometheus_client import generate_latest
 
 from utils import startup, metrics
 from utils.db_config import db
-from views import assets, api_house, api_player, renders, fun_tools, api_shop, api_game
+from views import assets, api_house, api_player, renders, administration, api_shop, api_game
 
 logger = logging.getLogger('System')
 
@@ -39,7 +39,7 @@ def create_app():
         api_player.mod,
         api_shop.mod,
         api_game.mod,
-        fun_tools.mod
+        administration.mod
     ]
 
     for registration in registers:
