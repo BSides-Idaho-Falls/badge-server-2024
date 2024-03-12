@@ -53,3 +53,24 @@ class Player:
         if self.last_robbery_attempt:
             item["last_robbery_attempt"] = datetime.datetime.isoformat(self.last_robbery_attempt)
         return item
+
+    @staticmethod
+    def set_last_active_now(player_id):
+        now = datetime.datetime.now().isoformat()
+        player = db["players"].find_one({"_id": player_id}, ["_id"])
+        if not player:
+            return
+        db["players"].update_one({"_id": player_id}, {
+            "$set": {
+                "last_activity": now
+            }
+        })
+
+    @staticmethod
+    def get_player_house_id(player_id):
+        player = db["players"].find_one({"_id": player_id}, ["_id", "house_id"])
+        if not player:
+            return
+        if "house_id" not in player:
+            return
+        return player["house_id"]

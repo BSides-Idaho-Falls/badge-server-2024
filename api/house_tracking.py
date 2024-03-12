@@ -5,6 +5,7 @@ from typing import Optional, List, Union
 from api.house_base import House
 from api.material_base import Material
 from api.materials import Air
+from utils import metrics
 from utils.db_config import db
 
 
@@ -211,6 +212,7 @@ class HouseAccess:
 
         house.save()
         robbers_house.save()
+        metrics.metric_tracker.increment_robbery_attempt(True)
 
         return {"success": True, "robbed": True, "contents": {"dollars": dollars}}
 
