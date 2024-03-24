@@ -1,3 +1,4 @@
+import datetime
 import inspect
 import os
 
@@ -153,7 +154,7 @@ def registration(func):
         ).get("value")
         if config_max_registrations < 0:
             return False  # -1 or lower = no limit
-        player_registrations = db["players"].count_documents({"token": registration_token})
+        player_registrations = db["players"].count_documents({"registered_by": registration_token})
         return player_registrations >= config_max_registrations
 
     def validate_incoming_data(player_id):
@@ -169,6 +170,7 @@ def registration(func):
         if limits_exceeded(registration_token):
             return {"success": False, "reason": "You have registered too many players!"}
         player = Player(player_id=player_id, registered_by=registration_token)
+        player.created_on = datetime.datetime.now()
         return {"success": True, "player": player}, 200
 
     def decorator(*args, **kwargs):

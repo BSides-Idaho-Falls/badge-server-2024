@@ -1,3 +1,4 @@
+import datetime
 import os
 import uuid
 
@@ -11,6 +12,82 @@ from utils.db_config import db
 from utils.validation import dict_types_valid
 
 mod = Blueprint('api_fun_tools', __name__)
+
+
+def determine_purge_remaining(players, options: dict):
+    # How many players will remain for the registration key after the purge?
+    # The player to keep will be based on either who has the most money, or who was created first.
+    remaining_players: int = options.get("remaining_players", 1)
+    delete_by: str = options.get("delete_by", "money")  # money | first_created
+    if delete_by == "money":
+        house_ids: list = [{"house_id": p.get("house_id")} for p in players]
+        houses: list = []
+        if len(house_ids) == 1:
+            house = db["houses"].find_one({"house_id"}, ["_id", "house_id", "vault_contents"])
+            if house:
+                houses.append(house)
+        else:
+            houses = [house for house in db["houses"].find(
+                {
+                    "$or": house_ids
+                },
+                ["_id", "house_id", "vault_contents"]
+            )]
+        money_mapping: dict = {}
+        for house in houses:
+            vault_contents: dict = house.get("vault_contents", {})
+            dollars: int = vault_contents.get("dollars", 0)
+            money_mapping[house.get("house_id")] = dollars
+        for p in players:
+            p["dollars"] = money_mapping[p["house_id"]]
+        sorted_players = sorted(players, key=lambda d: d['dollars'], reverse=True)
+        keepers: list = []
+        for i in range(0, remaining_players):
+            if len(sorted_players) < 1:
+                return keepers
+            keepers.append(sorted_players.pop(0))
+        return keepers
+    elif delete_by == "first_created":
+        keepers: list = []
+        future = (datetime.datetime.now() + datetime.timedelta(minutes=1)).isoformat()
+        sorted_players = sorted(players, key=lambda d: d.get("first_created", future))
+        for i in range(0, remaining_players):
+            if len(sorted_players) < 1:
+                return keepers
+            keepers.append(sorted_players.pop(0))
+        return keepers
+    raise NotImplementedError("Invalid option")
+
+
+@mod.route("/api/purge-players", methods=["POST"])
+@admin_required
+@json_data
+def purge_players(data):
+    """
+    Purge excess players based on a registration key.
+    :param data:
+    {
+      "registration_key": "str - Registration key",
+      "options": {  # Additional options
+        "remaining_players": 1,  # How many players will remain for the key after the purge.
+        "delete_by": "money | first_created"  # Delete by most money, or first created
+      }
+    }
+    :return:
+    """
+    registration_key: str = data.get("registration_key")
+    if not registration_key:
+        return {"success": False, "reason": "No registration key provided"}
+    options: dict = data.get("options", {})
+    players = [p for p in db["players"].find(
+        {"registered_by": registration_key},
+        ["_id", "player_id", "house_id", "first_created"]
+    )]
+    try:
+        keepers: list = determine_purge_remaining(players, options)
+    except NotImplementedError as e:
+        return {"success": False, "reason": "Invalid options."}, 500
+    return "hi"
 
 
 @mod.route("/api/reset-game", methods=["DELETE"])
@@ -171,4 +248,3 @@ def compare_houses(house_id1, house_id2):
         "house1": house1.vault_contents.dollars,
         "house2": house2.vault_contents.dollars
     }
-
