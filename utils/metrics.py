@@ -1,5 +1,6 @@
 import datetime
 import os
+import threading
 import uuid
 from typing import Union
 
@@ -229,7 +230,8 @@ class MetricTracker:
         if not self.push_registry_host:
             return
         try:
-            push_to_gateway(self.push_registry_host, job='badge_server', registry=REGISTRY)
+            job_name = f"t_{threading.get_native_id()}"
+            push_to_gateway(self.push_registry_host, job=job_name, registry=self.registry)
         except Exception:
             print(f"Failed to push metrics to {self.push_registry_host}!")
 

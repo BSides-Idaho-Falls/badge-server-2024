@@ -168,7 +168,7 @@ def registration(func):
         if player:
             return {"success": False, "reason": "Can't recreate player"}, 400
         if limits_exceeded(registration_token):
-            return {"success": False, "reason": "You have registered too many players!"}
+            return {"success": False, "reason": "You have registered too many players!"}, 400
         player = Player(player_id=player_id, registered_by=registration_token)
         player.created_on = datetime.datetime.now()
         return {"success": True, "player": player}, 200
