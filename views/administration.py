@@ -6,7 +6,7 @@ from flask import Blueprint, request
 
 from api.house_base import House
 from api.house_tracking import HouseAccess
-from utils import validation, configuration
+from utils import validation, configuration, player_utils
 from utils.api_decorators import json_data, admin_required
 from utils.db_config import db
 from utils.validation import dict_types_valid
@@ -19,7 +19,9 @@ def determine_purge_remaining(players, options: dict):
     # The player to keep will be based on either who has the most money, or who was created first.
     remaining_players: int = options.get("remaining_players", 1)
     delete_by: str = options.get("delete_by", "money")  # money | first_created
-    if delete_by == "money":
+    if delete_by == "all":
+        return []
+    elif delete_by == "money":
         house_ids: list = [{"house_id": p.get("house_id")} for p in players]
         houses: list = []
         if len(house_ids) == 1:
@@ -70,7 +72,7 @@ def purge_players(data):
       "registration_key": "str - Registration key",
       "options": {  # Additional options
         "remaining_players": 1,  # How many players will remain for the key after the purge.
-        "delete_by": "money | first_created"  # Delete by most money, or first created
+        "delete_by": "money | first_created | all"  # Delete by most money, or first created
       }
     }
     :return:
@@ -83,30 +85,28 @@ def purge_players(data):
         {"registered_by": registration_key},
         ["_id", "player_id", "house_id", "first_created"]
     )]
+    deleted = 0
     try:
         keepers: list = determine_purge_remaining(players, options)
+        keeper_ids = [k["_id"] for k in keepers]
+        print(players)
+        print(keepers)
+        for player in players:
+            if player["_id"] in keeper_ids:
+                continue
+            player_utils.delete_player(player)
+            deleted += 1
     except NotImplementedError as e:
-        return {"success": False, "reason": "Invalid options."}, 500
-    return "hi"
+        return {"success": False, "reason": "Invalid options."}, 400
+    return {"success": True, "deleted": deleted}
 
 
 @mod.route("/api/delete-player/<player_id>", methods=["DELETE"])
 @admin_required
 def delete_player(player_id):
-    player = db["players"].find_one({"_id": player_id}, ["house_id"])
-    if not player:
-        return {"success": False, "reason": "Player doesn't exist"}
-    if house_id := player.get("house_id"):
-        if house := db["houses"].find_one({"_id": house_id, "abandoned": False}):
-            house["abandoned"] = True
-            house["abandoned_by"] = player_id
-            db["houses"].find_one_and_replace({"_id": house_id}, house)
-
-    # new UUID so there's no overlaps. old ID can still be accessed via player_id
-    player["_id"] = str(uuid.uuid4())
-    db["deleted_players"].insert_one(player)
-    db["players"].find_one_and_delete({"_id": player_id})
-
+    success, message = player_utils.delete_player(player_id)
+    if not success:
+        return {"success": False, "reason": message}
     return {"success": True}
 
 
