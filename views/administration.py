@@ -90,6 +90,26 @@ def purge_players(data):
     return "hi"
 
 
+@mod.route("/api/delete-player/<player_id>", methods=["DELETE"])
+@admin_required
+def delete_player(player_id):
+    player = db["players"].find_one({"_id": player_id}, ["house_id"])
+    if not player:
+        return {"success": False, "reason": "Player doesn't exist"}
+    if house_id := player.get("house_id"):
+        if house := db["houses"].find_one({"_id": house_id, "abandoned": False}):
+            house["abandoned"] = True
+            house["abandoned_by"] = player_id
+            db["houses"].find_one_and_replace({"_id": house_id}, house)
+
+    # new UUID so there's no overlaps. old ID can still be accessed via player_id
+    player["_id"] = str(uuid.uuid4())
+    db["deleted_players"].insert_one(player)
+    db["players"].find_one_and_delete({"_id": player_id})
+
+    return {"success": True}
+
+
 @mod.route("/api/reset-game", methods=["DELETE"])
 @admin_required
 def reset_game():
