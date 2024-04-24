@@ -18,7 +18,7 @@ def determine_purge_remaining(players, options: dict):
     # How many players will remain for the registration key after the purge?
     # The player to keep will be based on either who has the most money, or who was created first.
     remaining_players: int = options.get("remaining_players", 1)
-    delete_by: str = options.get("delete_by", "money")  # money | first_created
+    delete_by: str = options.get("delete_by", "money")  # all | money | first_created
     if delete_by == "all":
         return []
     elif delete_by == "money":
@@ -192,16 +192,21 @@ def set_config(key, data):
 @mod.route("/api/config/<key>", methods=["GET"])
 @admin_required
 def get_config(key):
-    value = configuration.get_config_value(key)
+    value = configuration.get_config_value(key, include_secrets=False)
     if not value:
-        return {"success": False, "reason": "Key does not exist. Default value may be used."}
+        return {"success": False, "reason": "Key does not exist."}
     return value
 
 
 @mod.route("/api/config-dump")
 @admin_required
 def dump_config():
-    values = [item for item in db["config"].find({})]
+    values = [item for item in db["config"].find({
+        "$or": [
+            {"secret": {"$exists": False}},
+            {"secret": False}
+        ]
+    })]
     return {"success": True, "count": len(values), "items": values}
 
 

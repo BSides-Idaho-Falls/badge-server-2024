@@ -9,7 +9,7 @@ def delete_player(player: Union[dict, str]):
         player = db["players"].find_one({"_id": player}, ["house_id"])
     player_id = player["_id"]
     if not player:
-        return False, "Player doesn't exist"
+        return False, "Player does not exist"
     if house_id := player.get("house_id"):
         if house := db["houses"].find_one({"_id": house_id, "abandoned": False}):
             house["abandoned"] = True

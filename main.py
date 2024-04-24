@@ -20,9 +20,13 @@ def get_secret_key():
         key = str(uuid.uuid4())
         db["config"].insert_one({
             "_id": "flask_key",
-            "key": key
+            "key": key,
+            "secret": True
         })
         return key
+    if "secret" not in flask_key:
+        flask_key["secret"] = True
+        db["config"].find_one_and_replace({"_id": "flask_key"}, flask_key)
     return flask_key["key"]
 
 
