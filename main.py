@@ -60,11 +60,14 @@ def create_app():
     def server_error(e):
         return "500", 500
 
-    @app.route('/metrics')
+    @app.route('/refresh-metrics')
     def serve_metrics():
+        """Refresh / recalculate metrics data."""
         with app.app_context():
             metrics.refresh_metrics(app.metric_tracker)
-            return generate_latest(app.metric_tracker.registry)
+            # Very buggy with gunicorn workers. Using push-registry / gravwell instead.
+            # return generate_latest(app.metric_tracker.registry)
+            return {"success": True}
 
     @app.after_request
     def after_request(response):

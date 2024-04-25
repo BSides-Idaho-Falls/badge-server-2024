@@ -1,8 +1,6 @@
 import datetime
-import os
-import uuid
 
-from flask import Blueprint, request
+from flask import Blueprint
 
 from api.house_base import House
 from api.house_tracking import HouseAccess

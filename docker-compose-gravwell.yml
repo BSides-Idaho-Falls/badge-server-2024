@@ -10,7 +10,7 @@ services:
     image: "gravwell/gravwell:latest"
     restart: always
     ports:
-      - 8081:80
+      - 8085:80
     volumes:
       - gravwell-etc:/opt/gravwell/etc
       - gravwell-storage:/opt/gravwell/storage
