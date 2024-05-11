@@ -1,13 +1,32 @@
 import datetime
+import logging
 import os
+import sys
 import threading
 import uuid
+from logging import handlers
 from typing import Union
 
-from prometheus_client import push_to_gateway, Counter, Gauge, REGISTRY, CollectorRegistry
+from prometheus_client import push_to_gateway, Counter, Gauge, CollectorRegistry
 
 from utils import metric_utils
+from utils.configuration import get_log_location, get_config_value
 from utils.db_config import db
+from utils.enums import LoggerName
+
+MAX_BYTES = get_config_value(
+    "logs.rotation.max_bytes", {"value": (10 * (1000 * 1000))}
+).get("value")
+logger = logging.getLogger(LoggerName.METRICS.value)
+logger.setLevel(logging.INFO)
+log_location = get_log_location(LoggerName.METRICS)
+
+ch = logging.StreamHandler(sys.stdout)
+logger.addHandler(ch)
+
+if log_location:
+    handler = handlers.RotatingFileHandler(log_location, maxBytes=MAX_BYTES, backupCount=10)
+    logger.addHandler(handler)
 
 
 class MetricTracker:
@@ -87,6 +106,7 @@ class MetricTracker:
     def write_entry(self, entry):
         """Allow writing metric entry to multiple locations such as DB & file."""
         db["metrics"].insert_one(entry)
+        logger.info(entry)
 
     def increment_robbery_attempt(self, successful: Union[bool, str]):
         self.robberies_gauge.labels(successful=str(successful)).inc(1)
@@ -234,6 +254,9 @@ class MetricTracker:
             push_to_gateway(self.push_registry_host, job=job_name, registry=self.registry)
         except Exception:
             print(f"Failed to push metrics to {self.push_registry_host}!")
+
+
+metric_tracker = MetricTracker()
 
 
 def refresh_metrics(metric_tracker):

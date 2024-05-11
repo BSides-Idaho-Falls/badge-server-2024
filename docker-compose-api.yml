@@ -9,10 +9,12 @@ services:
         - ./templates:/root/templates
         - ./static:/root/static
         - ./metrics_configs/registry:/root/prometheus_registry
+        - ./logs:/logs
       environment:
         - MONGO_IP=mongo.badger
         - PROMETHEUS_MULTIPROC_DIR=/root/prometheus_registry
         - PUSH_REGISTRY=pushgateway.badger:9091
+        - IS_DOCKER=true
       ports:
         - 8080:8080
       networks:
