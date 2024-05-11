@@ -103,6 +103,7 @@ def create_app():
 
 
 startup.house_evictions()  # Clean up users who have been in a house too long.
+startup.warnings()
 
 app = create_app()
 

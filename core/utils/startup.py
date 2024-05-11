@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 from logging import handlers
 
@@ -32,3 +33,9 @@ def house_evictions():
             HouseAccess.evict(item["player_id"])
             evictions += 1
     logger.info(f"Evicted {evictions} people from houses!")
+
+
+def warnings():
+    if not os.environ.get("GRAVWELL_HOST"):
+        logger.warning("No GRAVWELL_HOST defined, no logs will be exported to gravwell")
+

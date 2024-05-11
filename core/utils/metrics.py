@@ -115,7 +115,6 @@ class MetricTracker:
             logger.warning("Unable to parse GRAVWELL_PORT and so no metrics exported")
             return
         if not host:
-            logger.warning("GRAVWELL_HOST not configured!")
             return
         if isinstance(data, dict):
             data = json.dumps(data)
