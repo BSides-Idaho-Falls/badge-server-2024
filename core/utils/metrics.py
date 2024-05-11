@@ -1,9 +1,12 @@
 import datetime
+import json
 import logging
 import os
+import socket
 import sys
 import threading
 import uuid
+from _socket import gaierror
 from logging import handlers
 from typing import Union
 
@@ -103,10 +106,38 @@ class MetricTracker:
             registry=self.registry
         )
 
+    def _send_data(self, data: Union[list, str]):
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        host = os.environ.get("GRAVWELL_HOST")
+        try:
+            port = int(os.environ.get("GRAVWELL_PORT", 7777))
+        except Exception:
+            logger.warning("Unable to parse GRAVWELL_PORT and so no metrics exported")
+            return
+        if not host:
+            logger.warning("GRAVWELL_HOST not configured!")
+            return
+        if isinstance(data, dict):
+            data = json.dumps(data)
+        if isinstance(data, str):
+            data = [data]
+        try:
+            client_socket.connect((host, port))
+            for line in data:
+                client_socket.sendall(line.encode())
+                client_socket.sendall(b'\n')
+
+            client_socket.close()
+        except gaierror:
+            logger.warning(f"Gravwell not accessible, offline? {host}:{port}")
+        except Exception as e:
+            logger.error("Error:", e)
+
     def write_entry(self, entry):
         """Allow writing metric entry to multiple locations such as DB & file."""
         db["metrics"].insert_one(entry)
         logger.info(entry)
+        self._send_data(entry)
 
     def increment_robbery_attempt(self, successful: Union[bool, str]):
         self.robberies_gauge.labels(successful=str(successful)).inc(1)

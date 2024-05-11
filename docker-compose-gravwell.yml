@@ -8,15 +8,13 @@ networks:
 services:
   gravwell:
     image: "gravwell/gravwell:latest"
-    restart: always
+    restart: unless-stopped
     ports:
       - 8085:80
     volumes:
       - gravwell-etc:/opt/gravwell/etc
       - gravwell-storage:/opt/gravwell/storage
-    # Don't forget to configure your volumes, so that your data persists!
-    # See https://docs.gravwell.io/configuration/docker.html#configuring-persistent-storage
-    # volumes:
+      - ./logs:/opt/gravwell/logs
     networks:
       - badger
     environment:
@@ -27,25 +25,27 @@ services:
 
   simple-relay:
     image: "gravwell/simple_relay:latest"
-    restart: always
+    restart: unless-stopped
     depends_on:
       - gravwell
     networks:
       - badger
+    ports:
+      - 7777:7777
     environment:
       - GRAVWELL_CLEARTEXT_TARGETS=gravwell
       - GRAVWELL_INGEST_SECRET=MyIngestSecret
 
-  netflow-capture:
-    image: "gravwell/netflow_capture:latest"
-    restart: always
-    depends_on:
-      - gravwell
-    networks:
-      - badger
-    environment:
-      - GRAVWELL_CLEARTEXT_TARGETS=gravwell
-      - GRAVWELL_INGEST_SECRET=MyIngestSecret
+#  netflow-capture:
+#    image: "gravwell/netflow_capture:latest"
+#    restart: unless-stopped
+#    depends_on:
+#      - gravwell
+#    networks:
+#      - badger
+#    environment:
+#      - GRAVWELL_CLEARTEXT_TARGETS=gravwell
+#      - GRAVWELL_INGEST_SECRET=MyIngestSecret
 volumes:
   gravwell-etc:
   gravwell-storage:

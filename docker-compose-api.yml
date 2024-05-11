@@ -15,6 +15,7 @@ services:
         - PROMETHEUS_MULTIPROC_DIR=/root/prometheus_registry
         - PUSH_REGISTRY=pushgateway.badger:9091
         - IS_DOCKER=true
+        - GRAVWELL_HOST=simple-relay.badger
       ports:
         - 8080:8080
       networks:
