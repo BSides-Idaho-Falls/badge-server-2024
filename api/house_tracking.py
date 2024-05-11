@@ -1,12 +1,35 @@
 import datetime
 import json
+import logging
+import sys
+from logging import handlers
 from typing import Optional, List, Union
 
 from api.house_base import House
 from api.material_base import Material
 from api.materials import Air
 from utils import metrics
+from utils.configuration import get_config_value, get_log_location
 from utils.db_config import db
+from utils.enums import LoggerName
+
+MAX_BYTES = get_config_value(
+    "logs.rotation.max_bytes", {"value": (10 * (1000 * 1000))}
+).get("value")
+logger = logging.getLogger(LoggerName.SYSTEM.value)
+logger.setLevel(logging.INFO)
+log_location = get_log_location(LoggerName.SYSTEM)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+
+ch = logging.StreamHandler(sys.stdout)
+ch.setFormatter(formatter)
+logger.addHandler(ch)
+
+if log_location:
+    handler = handlers.RotatingFileHandler(log_location, maxBytes=MAX_BYTES, backupCount=10)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
 
 
 class HouseAccess:
@@ -75,7 +98,7 @@ class HouseAccess:
         }
         if compressed_view:
             if c_size > e_size:
-                print(
+                logger.info(
                     f"Explicit render is smaller than the compressed! "
                     f"Returning this instead. {c_size} > {e_size}"
                 )
@@ -199,7 +222,7 @@ class HouseAccess:
     def rob_vault(self):
         if self.player_owns_house():
             return  # Can't rob your own house!
-        print(f"{self.player_id} is robbing vault of {self.house_id}")
+        logger.info(f"{self.player_id} is robbing vault of {self.house_id}")
         house: House = House(self.house_id).load()
         robbers_house_id = self.get_players_house_id()
         if not robbers_house_id:
@@ -230,7 +253,7 @@ class HouseAccess:
             if material.material_type.value == "Vault":
                 return self.rob_vault()
             return None  # material.passable is bugged, figure out why?
-        print(f"{self.player_id} is moving to {x},{y} in house {self.house_id}")
+        logger.info(f"{self.player_id} is moving to {x},{y} in house {self.house_id}")
         self.player_location = [x, y]
         db["access"].update_one(
             {"player_id": self.player_id},

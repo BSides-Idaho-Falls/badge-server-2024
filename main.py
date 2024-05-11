@@ -4,17 +4,13 @@ import os
 import uuid
 
 from flask import Flask, request
-from prometheus_client import generate_latest
 
 from utils import startup, metrics
 from utils.db_config import db
 from views import assets, api_house, api_player, renders, administration, api_shop, api_game
 
-logger = logging.getLogger('System')
-
 
 def get_secret_key():
-    logger.info("Grabbing the secret sauce.")
     flask_key = db["config"].find_one({"_id": "flask_key"})
     if not flask_key:
         key = str(uuid.uuid4())
@@ -33,6 +29,7 @@ def get_secret_key():
 def create_app():
     app = Flask(__name__)
     app.secret_key = get_secret_key()
+    app.logger.setLevel(logging.INFO)
     if "PROMETHEUS_MULTIPROC_DIR" not in os.environ:
         os.environ["PROMETHEUS_MULTIPROC_DIR"] = "./metrics_configs/registry"
 
@@ -50,7 +47,7 @@ def create_app():
         app.register_blueprint(registration)
 
     with app.app_context():
-        app.metric_tracker = metrics.MetricTracker()
+        app.metric_tracker = metrics.metric_tracker
 
     @app.errorhandler(404)
     def page_not_found(e):
