@@ -1,0 +1,51 @@
+version: "3.5"
+
+networks:
+  badger:
+    name: badger
+    external: true
+
+services:
+  gravwell:
+    image: "gravwell/gravwell:latest"
+    restart: unless-stopped
+    ports:
+      - 8085:80
+    volumes:
+      - gravwell-etc:/opt/gravwell/etc
+      - gravwell-storage:/opt/gravwell/storage
+      - ./logs:/opt/gravwell/logs
+    networks:
+      - badger
+    environment:
+      - GRAVWELL_INGEST_SECRET=MyIngestSecret
+      - GRAVWELL_INGEST_AUTH=MyIngestSecret
+      - GRAVWELL_CONTROL_AUTH=MyControlSecret
+      - GRAVWELL_SEARCHAGENT_AUTH=MySearchAgentAuth
+
+  simple-relay:
+    image: "gravwell/simple_relay:latest"
+    restart: unless-stopped
+    depends_on:
+      - gravwell
+    networks:
+      - badger
+    ports:
+      - 7777:7777
+    environment:
+      - GRAVWELL_CLEARTEXT_TARGETS=gravwell
+      - GRAVWELL_INGEST_SECRET=MyIngestSecret
+
+#  netflow-capture:
+#    image: "gravwell/netflow_capture:latest"
+#    restart: unless-stopped
+#    depends_on:
+#      - gravwell
+#    networks:
+#      - badger
+#    environment:
+#      - GRAVWELL_CLEARTEXT_TARGETS=gravwell
+#      - GRAVWELL_INGEST_SECRET=MyIngestSecret
+volumes:
+  gravwell-etc:
+  gravwell-storage:

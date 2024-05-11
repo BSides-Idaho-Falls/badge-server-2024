@@ -12,6 +12,7 @@ class Player:
         self.house_id: Optional[str] = None
         self.token: str = str(uuid.uuid4())
         self.registered_by: str = registered_by
+        self.created_on: Optional[datetime] = None
         self.last_robbery_attempt: Optional[datetime] = None
 
     def has_house(self):
@@ -44,6 +45,10 @@ class Player:
                 if v is not None:
                     setattr(self, k, datetime.datetime.fromisoformat(v))
                     continue
+            elif k == "created_on":
+                if v is not None:
+                    setattr(self, k, datetime.datetime.fromisoformat(v))
+                    continue
             setattr(self, k, v)
         return self
 
@@ -52,4 +57,27 @@ class Player:
         item["_id"] = self.player_id
         if self.last_robbery_attempt:
             item["last_robbery_attempt"] = datetime.datetime.isoformat(self.last_robbery_attempt)
+        if self.created_on:
+            item["created_on"] = datetime.datetime.isoformat(self.created_on)
         return item
+
+    @staticmethod
+    def set_last_active_now(player_id):
+        now = datetime.datetime.now().isoformat()
+        player = db["players"].find_one({"_id": player_id}, ["_id"])
+        if not player:
+            return
+        db["players"].update_one({"_id": player_id}, {
+            "$set": {
+                "last_activity": now
+            }
+        })
+
+    @staticmethod
+    def get_player_house_id(player_id):
+        player = db["players"].find_one({"_id": player_id}, ["_id", "house_id"])
+        if not player:
+            return
+        if "house_id" not in player:
+            return
+        return player["house_id"]

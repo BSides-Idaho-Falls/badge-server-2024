@@ -3,6 +3,7 @@ from flask import Blueprint
 from api.house_base import House, VaultContents
 from api.material_base import MaterialType, Material
 from api.materials import material_from_type
+from utils import metrics
 from utils.api_decorators import has_house, json_data
 from utils.validation import dict_types_valid
 
