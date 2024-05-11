@@ -1,6 +1,7 @@
 
-import pymongo
 import os
+
+import pymongo
 from pymongo import MongoClient
 
 mongo_ip = os.environ['MONGO_IP'] if "MONGO_IP" in os.environ else "localhost"
@@ -23,4 +24,3 @@ else:
     client = pymongo.MongoClient(db_connect_string)
 
 db = client[db_name]
-

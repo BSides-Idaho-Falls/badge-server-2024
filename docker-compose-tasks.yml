@@ -1,22 +1,17 @@
 version: '3.7'
 services:
-    web_2024:
-      image: meecles/badge-api-2024
-      build: ./core/
-      container_name: badge-api-2024
+    tasks_2024:
+      image: meecles/badge-tasks-2024
+      build: ./task_engine/
+      container_name: badge-tasks-2024
       restart: unless-stopped
       volumes:
-        - ./templates:/root/templates
-        - ./static:/root/static
-        - ./metrics_configs/registry:/root/prometheus_registry
         - ./logs:/logs
       environment:
         - MONGO_IP=mongo.badger
         - PROMETHEUS_MULTIPROC_DIR=/root/prometheus_registry
         - PUSH_REGISTRY=pushgateway.badger:9091
         - IS_DOCKER=true
-      ports:
-        - 8080:8080
       networks:
         - badger
 networks:

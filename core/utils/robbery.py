@@ -19,6 +19,3 @@ def find_unoccupied_house(exclusions: Optional[List[str]] = None) -> str:
         if house_id not in accesses and house_id not in exclusions:
             open_houses.append(house_id)
     return random.choice(open_houses) if len(open_houses) > 0 else None
-
-
-
