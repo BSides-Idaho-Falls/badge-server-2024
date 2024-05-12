@@ -6,14 +6,11 @@ services:
       container_name: badge-api-2024
       restart: unless-stopped
       volumes:
-        - ./templates:/root/templates
-        - ./static:/root/static
-        - ./metrics_configs/registry:/root/prometheus_registry
+        - ./core/templates:/root/templates
+        - ./core/static:/root/static
         - ./logs:/logs
       environment:
         - MONGO_IP=mongo.badger
-        - PROMETHEUS_MULTIPROC_DIR=/root/prometheus_registry
-        - PUSH_REGISTRY=pushgateway.badger:9091
         - IS_DOCKER=true
         - GRAVWELL_HOST=simple-relay.badger
       ports:
