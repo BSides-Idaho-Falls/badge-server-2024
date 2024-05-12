@@ -53,13 +53,17 @@
   $(document).ready(function() {
     var gridContainer = $(".grid-container");
 
+    function y_swapper(y){
+      return (30 - y);
+    }
+
     // Function to update a specific grid square based on JSON data
     function updateGridFromJson(jsonResponse) {
       var construction = jsonResponse.construction;
 
       for (var i = 0; i < 31 * 31; i++) {
         var x = i % 31;
-        var y = Math.floor(i / 31);
+        var y = y_swapper(Math.floor(i / 31));
         var gridItem = $("<div class='grid-item'><img></div>");
         var imageUrl = getMaterialType(construction, x, y).replace(" ", "_");
         gridItem.find('img').attr('src', imageUrl);
