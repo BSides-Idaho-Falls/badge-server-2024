@@ -69,17 +69,19 @@ def create_app():
     @app.after_request
     def after_request(response):
         status_code = str(response.status_code)
-        response_body = response.get_data(as_text=True)
+        response_body = None
+        if not request.endpoint.startswith("asset."):
+            response_body = response.get_data(as_text=True)
         response_json: dict = {}
         player_id = "N/A"
         try:
-            response_json = json.loads(response_body)
-            if "player_id" in response_json:
+            response_json = json.loads(response_body) if response_body else None
+            if response_json and "player_id" in response_json:
                 player_id = response_json["player_id"]
         except Exception:
             pass
         try:
-            success = str(response_json.get("success", "N/A"))
+            success = str(response_json.get("success", "N/A")) if response_json else False
         except Exception:
             success = "N/A"
         py_endpoint = request.endpoint
@@ -96,7 +98,6 @@ def create_app():
                 ip=requester_ip,
                 player_id=player_id
             ).push()
-
             return response
 
     return app
