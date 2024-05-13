@@ -1,0 +1,17 @@
+version: "3"
+services:
+  appsmith:
+    image: index.docker.io/appsmith/appsmith-ee
+    container_name: appsmith
+    ports:
+      - "9480:80"
+      - "9443:443"
+    volumes:
+      - ./stacks:/appsmith-stacks
+    restart: unless-stopped
+    networks:
+      - badger
+networks:
+  badger:
+    name: badger
+    external: true

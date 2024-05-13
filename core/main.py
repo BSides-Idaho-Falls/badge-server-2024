@@ -7,6 +7,7 @@ from flask import Flask, request
 
 from utils import startup, metrics
 from utils.db_config import db
+from utils.insights import log_request
 from views import assets, api_house, api_player, renders, administration, api_shop, api_game
 
 
@@ -88,6 +89,7 @@ def create_app():
         request_method = request.method
         requester_ip = request.remote_addr
         http_path = request.url_rule.rule if request.url_rule else None
+        log_request(request, response)
         with app.app_context():
             app.metric_tracker.increment_http_request(
                 method=request_method,
