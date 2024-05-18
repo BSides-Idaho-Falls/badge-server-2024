@@ -31,8 +31,10 @@ def get_secret_key():
 def extract_player_id(token: Optional[str]) -> str:
     if not token:
         return "N/A"
-    player_id = db["players"].find_one({"token": token}, ["player_id"])
-    return player_id.get("player_id") or "N/A"
+    player = db["players"].find_one({"token": token}, ["player_id"])
+    if not player:
+        return "N/A"
+    return player.get("player_id", "N/A")
 
 
 def create_app():
@@ -77,8 +79,11 @@ def create_app():
     def after_request(response):
         status_code = str(response.status_code)
         response_body = None
-        if not request.endpoint.startswith("asset."):
-            response_body = response.get_data(as_text=True)
+        if request and request.endpoint:
+            if not request.endpoint.startswith("asset."):
+                response_body = response.get_data(as_text=True)
+        elif not request.endpoint:
+            logging.getLogger().error("No request endpoint!")
         response_json: dict = {}
         player_id = "N/A"
         try:
