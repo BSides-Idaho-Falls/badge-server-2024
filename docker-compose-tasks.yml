@@ -9,8 +9,7 @@ services:
         - ./logs:/logs
       environment:
         - MONGO_IP=mongo.badger
-        - PROMETHEUS_MULTIPROC_DIR=/root/prometheus_registry
-        - PUSH_REGISTRY=pushgateway.badger:9091
+        - API_IP=web_2024.badger
         - IS_DOCKER=true
       networks:
         - badger

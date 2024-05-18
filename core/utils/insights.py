@@ -1,6 +1,10 @@
 import datetime
 import json
+import os
+import socket
 import uuid
+from _socket import gaierror
+from typing import Union
 
 from utils.configuration import get_config_value
 from utils.db_config import db
@@ -25,6 +29,35 @@ def sanitize_content(dict_item):
             dict_item[field] = "<redacted>"
 
     return dict_item
+
+
+def _send_data(data: Union[list, str]):
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    host = os.environ.get("GRAVWELL_HOST")
+    try:
+        port = int(os.environ.get("GRAVWELL_PORT", 7778))
+    except Exception:
+        #logger.warning("Unable to parse GRAVWELL_PORT and so no metrics exported")
+        return
+    if not host:
+        return
+    if isinstance(data, dict):
+        data = json.dumps(data)
+    if isinstance(data, str):
+        data = [data]
+    try:
+        client_socket.connect((host, port))
+        for line in data:
+            client_socket.sendall(line.encode())
+            client_socket.sendall(b'\n')
+
+        client_socket.close()
+    except gaierror:
+        pass
+        #logger.warning(f"Gravwell not accessible, offline? {host}:{port}")
+    except Exception as e:
+        pass
+        #logger.error("Error:", e)
 
 
 def _log_request(request, response):
@@ -81,3 +114,4 @@ def _log_request(request, response):
         }
     }
     db["requests"].insert_one(db_entry)
+    _send_data(db_entry)

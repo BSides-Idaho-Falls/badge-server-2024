@@ -2,6 +2,7 @@ import json
 import logging
 import os
 import uuid
+from typing import Optional
 
 from flask import Flask, request
 
@@ -25,6 +26,13 @@ def get_secret_key():
         flask_key["secret"] = True
         db["config"].find_one_and_replace({"_id": "flask_key"}, flask_key)
     return flask_key["key"]
+
+
+def extract_player_id(token: Optional[str]) -> str:
+    if not token:
+        return "N/A"
+    player_id = db["players"].find_one({"token": token}, ["player_id"])
+    return player_id.get("player_id") or "N/A"
 
 
 def create_app():
@@ -63,8 +71,6 @@ def create_app():
         """Refresh / recalculate metrics data."""
         with app.app_context():
             metrics.refresh_metrics(app.metric_tracker)
-            # Very buggy with gunicorn workers. Using push-registry / gravwell instead.
-            # return generate_latest(app.metric_tracker.registry)
             return {"success": True}
 
     @app.after_request
@@ -81,6 +87,8 @@ def create_app():
                 player_id = response_json["player_id"]
         except Exception:
             pass
+        if player_id == "N/A":
+            player_id = extract_player_id(request.headers.get("X-API-Token"))
         try:
             success = str(response_json.get("success", "N/A")) if response_json else False
         except Exception:

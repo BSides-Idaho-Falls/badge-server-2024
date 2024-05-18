@@ -14,6 +14,8 @@ services:
     volumes:
       - gravwell-etc:/opt/gravwell/etc
       - gravwell-storage:/opt/gravwell/storage
+      - ./metrics_configs/gravwell/core/license:/opt/gravwell/etc/license
+      - ./metrics_configs/gravwell/core/gravwell.conf:/opt/gravwell/etc/gravwell.conf
       - ./logs:/opt/gravwell/logs
     networks:
       - badger
@@ -30,22 +32,15 @@ services:
       - gravwell
     networks:
       - badger
+    volumes:
+      - ./metrics_configs/gravwell/relay/license:/opt/gravwell/etc/license
+      - ./metrics_configs/gravwell/relay/simple_relay.conf:/opt/gravwell/etc/simple_relay.conf
     ports:
       - 7777:7777
+      - 7778:7778
     environment:
       - GRAVWELL_CLEARTEXT_TARGETS=gravwell
       - GRAVWELL_INGEST_SECRET=MyIngestSecret
-
-#  netflow-capture:
-#    image: "gravwell/netflow_capture:latest"
-#    restart: unless-stopped
-#    depends_on:
-#      - gravwell
-#    networks:
-#      - badger
-#    environment:
-#      - GRAVWELL_CLEARTEXT_TARGETS=gravwell
-#      - GRAVWELL_INGEST_SECRET=MyIngestSecret
 volumes:
   gravwell-etc:
   gravwell-storage:
