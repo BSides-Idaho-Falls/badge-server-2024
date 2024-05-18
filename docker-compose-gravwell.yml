@@ -9,6 +9,7 @@ services:
   gravwell:
     image: "gravwell/gravwell:latest"
     restart: unless-stopped
+    container_name: gravwell
     ports:
       - 8085:80
     volumes:
@@ -28,6 +29,7 @@ services:
   simple-relay:
     image: "gravwell/simple_relay:latest"
     restart: unless-stopped
+    container_name: gravwell_relay
     depends_on:
       - gravwell
     networks:
