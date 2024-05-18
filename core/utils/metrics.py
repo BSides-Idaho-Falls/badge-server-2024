@@ -129,8 +129,10 @@ class MetricTracker:
             client_socket.close()
         except gaierror:
             logger.warning(f"Gravwell not accessible, offline? {host}:{port}")
+        except ConnectionRefusedError:
+            logger.warning("Gravwell ingester offline")
         except Exception as e:
-            logger.error("Error:", e)
+            logger.error("Gravwell inaccessable.")
 
     def write_entry(self, entry):
         """Allow writing metric entry to multiple locations such as DB & file."""
