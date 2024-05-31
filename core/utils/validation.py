@@ -1,5 +1,16 @@
 import random
 
+from api.player_base import Player
+
+
+def evaluate_eviction(player: Player):
+    evicted = False
+    if player.evicted:
+        player.evicted = False
+        player.save()
+        evicted = True
+    return evicted
+
 
 def dict_types_valid(item: dict, validation_legend: dict) -> bool:
     for k, v in validation_legend.items():

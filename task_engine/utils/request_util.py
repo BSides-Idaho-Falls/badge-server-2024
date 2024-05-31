@@ -24,3 +24,9 @@ def refresh_metrics():
         logger.error("No logging base path")
 
 
+def trigger_evictions():
+    if base_path := _get_base_path():
+        response = requests.get(f"{base_path}/api/trigger-evictions")
+        logger.info(response.text)
+    else:
+        logger.error("No logging base path")

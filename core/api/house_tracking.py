@@ -313,6 +313,7 @@ class HouseAccess:
         item = db["access"].find_one({"player_id": player_id})
         if not item:
             return {"success": False, "reason": "No player to evict"}
+        db["players"].find_one_and_update({"_id": player_id}, {"$set": {"evicted": True}})
         db["access"].delete_one({"player_id": player_id})
         return {"success": True}
 

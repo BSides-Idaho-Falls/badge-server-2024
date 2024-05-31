@@ -164,7 +164,7 @@ def disable_registration():
 @admin_required
 def trigger_evictions():
     evictions: int = 0
-    for item in db["access"].find({}):
+    for item in db["access"].find({}, ["_id", "player_id"]):
         if HouseAccess.visit_too_long(item):
             HouseAccess.evict(item["player_id"])
             evictions += 1
@@ -174,8 +174,14 @@ def trigger_evictions():
 @mod.route("/api/trigger-evictions/all", methods=["POST"])
 @admin_required
 def trigger_all_evictions():
-    items = db["access"].find({}, ["_id"])
+    items = db["access"].find({}, ["_id", "player_id"])
     evictions: int = len([x for x in items])
+    failed_evictions: int = 0
+    for item in items:
+        success = HouseAccess.evict(item["player_id"]).get("success", False)
+        if not success:
+            failed_evictions += 1
+
     return {"success": True, "evictions": evictions}
 
 

@@ -14,6 +14,7 @@ class Player:
         self.registered_by: str = registered_by
         self.created_on: Optional[datetime] = None
         self.last_robbery_attempt: Optional[datetime] = None
+        self.evicted: Optional[bool] = False
 
     def has_house(self):
         return True if self.house_id else False
@@ -59,6 +60,7 @@ class Player:
             item["last_robbery_attempt"] = datetime.datetime.isoformat(self.last_robbery_attempt)
         if self.created_on:
             item["created_on"] = datetime.datetime.isoformat(self.created_on)
+        item["evicted"] = True if self.evicted else False  # Ternary so None evals to False
         return item
 
     @staticmethod
