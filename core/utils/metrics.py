@@ -159,6 +159,7 @@ class MetricTracker:
         self.write_entry(db_entry)
         db_entry["metric"] = "apiserver_robberies_total"
         db_entry["metric_type"] = "counter"
+        db_entry["_id"] = str(uuid.uuid4())
         self.write_entry(db_entry)
         return self
 
