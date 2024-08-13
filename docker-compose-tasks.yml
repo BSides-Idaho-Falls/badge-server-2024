@@ -11,6 +11,7 @@ services:
         - MONGO_IP=mongo.badger
         - API_IP=web_2024.badger
         - IS_DOCKER=true
+        - API_KEY=default_token_hack_me_boi
       networks:
         - badger
 networks:
