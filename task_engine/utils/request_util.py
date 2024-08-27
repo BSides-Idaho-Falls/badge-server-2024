@@ -24,3 +24,12 @@ def refresh_metrics():
         logger.error("No logging base path")
 
 
+def trigger_evictions():
+    headers = {
+        "X-API-Token": os.environ.get("API_KEY", "")
+    }
+    if base_path := _get_base_path():
+        response = requests.post(f"{base_path}/api/trigger-evictions", headers=headers)
+        logger.info(response.text)
+    else:
+        logger.error("No logging base path")

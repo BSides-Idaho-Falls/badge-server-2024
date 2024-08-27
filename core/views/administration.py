@@ -117,6 +117,20 @@ def reset_game():
     return {"success": True}
 
 
+@mod.route("/api/reconstruct-db-json/<mac_addr>", methods=["GET"])
+@admin_required
+def reconstruct_db_json(mac_addr):
+    player = db["players"].find_one({"player_id": mac_addr}, ["player_id", "house_id", "token", "registered_by"])
+    if not player:
+        return {"success": False, "reason": "No entry with that mac address"}
+    return {
+        "api_token": player["token"],
+        "player_id": player["player_id"],
+        "house_id": player["house_id"],
+        "registration_token": player["registered_by"]
+    }
+
+
 @mod.route("/api/clear-registration", methods=["DELETE"])
 @admin_required
 def reset_registration():
@@ -164,7 +178,7 @@ def disable_registration():
 @admin_required
 def trigger_evictions():
     evictions: int = 0
-    for item in db["access"].find({}):
+    for item in db["access"].find({}, ["_id", "player_id"]):
         if HouseAccess.visit_too_long(item):
             HouseAccess.evict(item["player_id"])
             evictions += 1
@@ -174,8 +188,14 @@ def trigger_evictions():
 @mod.route("/api/trigger-evictions/all", methods=["POST"])
 @admin_required
 def trigger_all_evictions():
-    items = db["access"].find({}, ["_id"])
+    items = db["access"].find({}, ["_id", "player_id"])
     evictions: int = len([x for x in items])
+    failed_evictions: int = 0
+    for item in items:
+        success = HouseAccess.evict(item["player_id"]).get("success", False)
+        if not success:
+            failed_evictions += 1
+
     return {"success": True, "evictions": evictions}
 
 

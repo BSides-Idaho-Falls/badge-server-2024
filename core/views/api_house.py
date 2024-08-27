@@ -10,7 +10,7 @@ from api.player_base import Player
 from utils import pathfinder
 from utils.api_decorators import has_house, player_valid, json_data
 from utils.conversions import solution_to_lucky_numbers
-from utils.validation import dict_types_valid
+from utils.validation import dict_types_valid, evaluate_eviction
 
 mod = Blueprint('api_house', __name__)
 
@@ -121,6 +121,8 @@ def move_vault(player_id, player):
         "player_location": access.player_location
     }
     access.load()  # Refresh house data
+    if evaluate_eviction(player):
+        return {"success": False, "reason": "You were kicked out of the house", "e": True}
     surroundings = access.render_surroundings(compressed_view=True)
     return {**response, **surroundings}, 200 if success else 400
 
@@ -163,7 +165,8 @@ def build_square(player_id, player, data):
         return {"success": False, "reason": "You must be in your own house"}, 400
     if access.house_id != player.house_id:
         return {"success": False, "reason": "You can't be in someone else's house while editing."}
-
+    if evaluate_eviction(player):
+        return {"success": False, "reason": "You were kicked out of the house", "e": True}
     house: House = House(house_id=player.house_id).load()
 
     if not House.in_bounds(x, y):
@@ -232,6 +235,8 @@ def clear_square(player_id, player, data):
 
     edit, code = house_editor(house, data)
     access.load()  # Refresh house data
+    if evaluate_eviction(player):
+        return {"success": False, "reason": "You were kicked out of the house", "e": True}
     surroundings = access.render_surroundings(compressed_view=True)
     return {**surroundings, **response_data, ** edit}, code
 

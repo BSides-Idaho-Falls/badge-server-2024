@@ -6,6 +6,7 @@ from flask import Blueprint, request
 from api.house_tracking import HouseAccess
 from utils import robbery
 from utils.api_decorators import has_house
+from utils.validation import evaluate_eviction
 
 mod = Blueprint('api_game', __name__)
 
@@ -15,7 +16,11 @@ mod = Blueprint('api_game', __name__)
 def move_player(player_id, direction, player):
     house_id: Optional[str] = HouseAccess.find_occupying_house(player_id)
     if not house_id:
-        return {"success": False, "reason": "You are not in a house."}, 400
+        return {
+            "success": False,
+            "reason": "You are not in a house.",
+            "e": evaluate_eviction(player)
+        }, 400
     access: HouseAccess = HouseAccess(
         player_id=player_id,
         house_id=house_id
@@ -64,7 +69,11 @@ def leave_house(player_id, player):
     """Leave house as both an owner and a robber."""
     house_id: Optional[str] = HouseAccess.find_occupying_house(player_id)
     if not house_id:
-        return {"success": False, "reason": "You aren't in a house"}, 400
+        return {
+            "success": False,
+            "reason": "You aren't in a house",
+            "e": evaluate_eviction(player)
+        }, 400
     access: HouseAccess = HouseAccess(
         player_id=player_id,
         house_id=house_id
