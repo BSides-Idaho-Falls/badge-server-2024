@@ -117,6 +117,20 @@ def reset_game():
     return {"success": True}
 
 
+@mod.route("/api/reconstruct-db-json/<mac_addr>", methods=["GET"])
+@admin_required
+def reconstruct_db_json(mac_addr):
+    player = db["players"].find_one({"player_id": mac_addr}, ["player_id", "house_id", "token", "registered_by"])
+    if not player:
+        return {"success": False, "reason": "No entry with that mac address"}
+    return {
+        "api_token": player["token"],
+        "player_id": player["player_id"],
+        "house_id": player["house_id"],
+        "registration_token": player["registered_by"]
+    }
+
+
 @mod.route("/api/clear-registration", methods=["DELETE"])
 @admin_required
 def reset_registration():
