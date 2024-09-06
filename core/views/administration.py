@@ -178,7 +178,7 @@ def disable_registration():
 @admin_required
 def trigger_evictions():
     evictions: int = 0
-    for item in db["access"].find({}, ["_id", "player_id"]):
+    for item in db["access"].find({}):
         if HouseAccess.visit_too_long(item):
             HouseAccess.evict(item["player_id"])
             evictions += 1
