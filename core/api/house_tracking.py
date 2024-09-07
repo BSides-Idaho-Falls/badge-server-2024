@@ -297,14 +297,32 @@ class HouseAccess:
     def visit_too_long(access, house_owner=False):
         if not access:
             return False
+
+        disable_activity_timeout: bool = get_config_value(
+            "evictions.disable_timeout", default_value={"value": False}
+        ).get("value")
+        if disable_activity_timeout:
+            return False
+
+        activity_timeout_seconds: int = get_config_value(
+            "evictions.activity_timeout_seconds", default_value={"value": 45}
+        ).get("value")
+        house_owner_access_minutes: int = get_config_value(
+            "evictions.house_owner_access_minutes", default_value={"value": 8}
+        ).get("value")
+        robber_access_minutes: int = get_config_value(
+            "evictions.robber_access_minutes", default_value={"value": 10}
+        ).get("value")
+
         latest_activity = datetime.datetime.fromisoformat(access["latest_activity"])
         access_time = datetime.datetime.fromisoformat(access["access_time"])
         now = datetime.datetime.now()
         activity_ago = now - latest_activity
         entered_ago = now - access_time
-        if activity_ago > datetime.timedelta(seconds=45):
+        if activity_ago > datetime.timedelta(seconds=activity_timeout_seconds):
             return True
-        if entered_ago > datetime.timedelta(minutes=10 if house_owner else 3):
+        entered_ago_minute_comparison = house_owner_access_minutes if house_owner else robber_access_minutes
+        if entered_ago > datetime.timedelta(minutes=entered_ago_minute_comparison):
             return True
         return False
 
