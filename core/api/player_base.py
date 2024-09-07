@@ -19,12 +19,14 @@ class Player:
     def has_house(self):
         return True if self.house_id else False
 
-    def can_rob_house(self) -> int:
+    def can_rob_house(self, rob_frequency=Optional[int]) -> int:
         if not self.last_robbery_attempt:
             return 0
+        if not rob_frequency:
+            rob_frequency = 45
         now = datetime.datetime.now()
         difference = now - self.last_robbery_attempt
-        if difference < datetime.timedelta(seconds=45):
+        if difference < datetime.timedelta(seconds=rob_frequency):
             seconds: int = difference.seconds
             return seconds
         return 0

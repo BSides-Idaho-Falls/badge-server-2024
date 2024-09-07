@@ -9,6 +9,7 @@ from api.materials import Air
 from api.player_base import Player
 from utils import pathfinder
 from utils.api_decorators import has_house, player_valid, json_data
+from utils.configuration import get_config_value
 from utils.conversions import solution_to_lucky_numbers
 from utils.validation import dict_types_valid, evaluate_eviction
 
@@ -267,4 +268,8 @@ def house_editor(house: House, data: dict) -> Tuple[dict, int]:
     house.save()
     # Lucky numbers are a list of coordinates with a solution to solve the maze from
     # the door to the vault
-    return {"success": success, "lucky_numbers": solution_to_lucky_numbers(solution)}, 200
+    display_lucky_numbers: bool = get_config_value(
+        "game.display_lucky_numbers", default_value=True
+    ).get("value")
+    lucky_numbers = solution_to_lucky_numbers(solution)
+    return {"success": success, "lucky_numbers": lucky_numbers if display_lucky_numbers else "0"}, 200

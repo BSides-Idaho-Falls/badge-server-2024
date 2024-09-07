@@ -6,6 +6,7 @@ from flask import Blueprint, request
 from api.house_tracking import HouseAccess
 from utils import robbery
 from utils.api_decorators import has_house
+from utils.configuration import get_config_value
 from utils.validation import evaluate_eviction
 
 mod = Blueprint('api_game', __name__)
@@ -90,12 +91,15 @@ def leave_house(player_id, player):
 @mod.route("/api/game/<player_id>/rob_house", methods=["POST"])
 @has_house
 def rob_house(player_id, player):
-    rob_timeout: int = player.can_rob_house()
+    rob_frequency: int = get_config_value(
+        "game.rob_frequency", default_value={"value": 45}
+    ).get("value")
+    rob_timeout: int = player.can_rob_house(rob_frequency=rob_frequency)
     if rob_timeout > 0:
         return {
             "success": False,
             "reason": "You are trying to rob houses too often!",
-            "seconds": 45 - rob_timeout
+            "seconds": rob_frequency - rob_timeout
         }, 429
     house_to_rob = robbery.find_unoccupied_house(exclusions=[player.house_id])
     if not house_to_rob:
